@@ -1,0 +1,33 @@
+PREAMBLE
+
+This script performs time-domain RFI clipping on 8-bit or 32-bit filterbank files.
+
+All code was developed for e-MERLIN's LOFT-e observing system.
+
+Code was developed by Charles Walker (walker.mbcxqcw2@gmail.com). Please cite accordingly. 
+
+(Note to Charlie: Add to ASCL!)
+
+The RFI clipping algorithm is described in detail in: Charles Walker's thesis: https://www.research.manchester.ac.uk/portal/en/theses/localising-fast-transients(d2847c6c-1b0f-43d9-9155-f8dccb432cb9).html
+
+(Note to charlie: add this to arXiv!)
+
+PYTHON REQUIREMENTS
+os
+numpy
+matplotlib
+astropy
+sigpyproc
+
+EXTRA REQUIREMENTS
+dspsr (for folding pulsar data)
+pav   (for plotting archive files)
+
+INSTRUCTIONS:
+
+Run "python Mary_Clipping_Script.py" from the command line
+The file "Cm1670.File1.8bit.fil" will be RFI clipped and output as "Mary_test.fil"
+Run dspsr commands noted in "Mary_Clipping_Script.py" to generate plots to compare PSRB0329+54 pulse profile pre- and post- RFI clipping.
+
+
+
