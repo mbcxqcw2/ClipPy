@@ -19,6 +19,7 @@ V3: 20191219  - Fixed ClipFil() description.
               - Fixed hardcoded RFIClip()instances of drawing numbers from Gaussians with means of of X/256 to X/np.float(nchans).
               - Functionised rescaling portion of RFIClip() as RescaleChunk().
               - Functionised cleaning portion of RFIClip() as CleanChunk().
+              - Removed superflous loop over # telescopes in ClipFil().
               
 """
 
@@ -651,22 +652,44 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
     print 'beginning clipping\n'
     
 
-    nfils=len(fils) #number of filterbanks to combine
+
+    nfils = len(fils) #number of filterbank files to clip. Should always be 1
+
+
     for c in range(nchunks): #loop over chunks to write out
-        data=np.zeros((nchans,blocksize,nfils)) #3D array to hold data
+
+        data=np.zeros((nchans,blocksize,nfils)) #declare 3D array to hold data
+
         chunk = 0 #initialise filterbank chunk
-        for i in range(nfils): #loop over telescopes (should always be 1. This is vestigal from incoherent beam code and should be cleaned up.)
-            skip=int(round(nskips[i])) #number of blocks to skip
-            blockstart=int(skip+(c*blocksize)) #start sample to read
-            print 'Reading/Writing chunk {0}/{1}'.format(c,nchunks)
-            chunk=fils[i].readBlock(blockstart,blocksize) #read chunk
-            if rficlip==True: #if rfi clipping mode is on:
-                print 'RFI clipping...'
-                chunk=RFIclip(chunk,nchans,clipsig) #clip rfi in data chunk
-            data[:,:,i]=chunk #append telescope to data
+
+
+        skip=int(round(nskips[0])) #number of blocks to skip reading at beginning of file (nskips[0] should be zero, this is vestigial from incoherent beam code)
+
+
+        blockstart=int(skip+(c*blocksize)) #start sample to read
+
+        print 'Reading/Writing chunk {0}/{1}'.format(c,nchunks)
+
+        #READ CHUNK
+        chunk=fils[0].readBlock(blockstart,blocksize) #read chunk
+
+        #RESCALE AND CLIP CHUNK
+        if rficlip==True: #if rfi clipping mode is on:
+            print 'RFI clipping...'
+            chunk=RFIclip(chunk,nchans,clipsig) #clip rfi in data chunk
+
+
+        #STORE CLEANED, RESCALED CHUNK IN NEW ARRAY
+        data[:,:,0]=chunk #append telescope to data
         data=Beam(data) #create beam
+
+        #OPTIONAL RESCALING OF DATA PRODUCT FOR STORAGE
+
         if bitrate==8: #if necessary...
             data=DownSampleBits(data) #...downsample to 8-bit
+
+        #WRITE OUT CLEANED DATA TO FILE
         data=data.T.flatten().astype(dtype=outdtype) #reshape the data to filterbank output (low freq to high freq t1, low freq to high freq t2, ....) and recast to 32 bit float
         sppu.File.cwrite(fh_out[0], data) #write block to filterbank file
+
     return
