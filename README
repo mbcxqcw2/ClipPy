@@ -1,4 +1,4 @@
-PREAMBLE
+# PREAMBLE
 
 This script performs time-domain RFI clipping on 8-bit or 32-bit filterbank files.
 
@@ -6,11 +6,11 @@ All code was developed for e-MERLIN's LOFT-e observing system.
 
 Code was developed by Charles Walker (walker.mbcxqcw2@gmail.com). Median clipping algorithm was developed by Rene Breton.
 
-Please cite accordingly. (Note to Charlie: Add to ASCL!)
+Please cite accordingly. **(Note to Charlie: Add to ASCL!)**
 
 The RFI clipping algorithm is described in detail in: Charles Walker's thesis: https://www.research.manchester.ac.uk/portal/en/theses/localising-fast-transients(d2847c6c-1b0f-43d9-9155-f8dccb432cb9).html
 
-(Note to charlie: add this to arXiv!)
+**(Note to charlie: add this to arXiv!)**
 
 The data file "Cm1670.File1.8bit.fil" referred to in this README is an observation of PSRB0329+54 taken using the LOFT-e backend. It can be found at: https://drive.google.com/open?id=195SnkU3mZbj2cZrPNAwkP5AfGToLVzxT
 
@@ -19,22 +19,26 @@ Manchester, R. N., Hobbs, G.B., Teoh, A. & Hobbs, M., AJ, 129, 1993-2006 (2005)
 http://www.atnf.csiro.au/research/pulsar/psrcat 
 
 
-PYTHON REQUIREMENTS
+# PYTHON REQUIREMENTS
+
 os
 numpy
 matplotlib
 astropy
 sigpyproc
 
-EXTRA REQUIREMENTS
+# EXTRA REQUIREMENTS
+
 dspsr (for folding pulsar data)
 pav   (for plotting archive files)
 
-FILE REQUIREMENTS
+# FILE REQUIREMENTS
+
 "Cm1670.File1.8bit.fil" (a filterbank file to be used to test the code)
 "Mary_test.fil"         (the result of running code on "Cm1670.File1.8bit.fil")
 
-INSTRUCTIONS:
+# INSTRUCTIONS:
+
 1) Download "Cm1670.File1.8bit.fil" and place it in this directory
 2) Download "Mary_test.fil" and place it somewhere else for reference
 
