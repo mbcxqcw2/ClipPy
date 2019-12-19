@@ -22,6 +22,7 @@ V3: 20191219  - Fixed ClipFil() description.
               - Removed superflous loop over # telescopes in ClipFil().
               - Removed dependance of ClipFil() on superflous Beam() function.
               - Removed superflous Beam() function.
+              - Removed dependance on superflous RFIClip() function.
 
               
 """
@@ -575,9 +576,31 @@ def RFIclip(data,nchans,sig=3.):
 
 def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=40000):
     """
-    RFI clips an input filterbank file. Outputs second, clipped file with chosen name.
+    Mitigates timeseries RFI in an input filterbank file.
+    Outputs second, clipped file with chosen name.
+    Mitigates RFI on a chunk-by-chunk basis using a chosen chunksize.
 
-    INPUTS:
+
+    CHUNKWISE RFI MITIGATION ALGORITHM:
+
+    1) Calls RescaleChunk()
+
+        a) Individually rescales channels to have mean 0 and stdv 1.
+
+    2) Calls CleanChunk()
+
+        b) Crunch rescaled data to get timeseries
+
+        c) Get median and stdv of timeseries
+
+        d) Find where timeseries lies outside of predefined sigma level
+
+        e) On channel-by-channel basis replace bad timesamples with random numbers drawn from gaussian
+
+    3) Returns rescaled, cleaned data chunk
+
+
+    FUNCTION INPUTS:
 
     in_fil       : (str) input filterbank to clip (must be directory location and file name)
     outname      : (str) output name for clipped filterbank
@@ -654,10 +677,16 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
         #READ CHUNK
         chunk=fils[0].readBlock(blockstart,blocksize) #read chunk
 
-        #RESCALE AND CLIP CHUNK
+        #OPTIONAL RESCALING AND CLIPPING
         if rficlip==True: #if rfi clipping mode is on:
             print 'RFI clipping...'
-            chunk=RFIclip(chunk,nchans,clipsig) #clip rfi in data chunk
+
+            #RESCALE CHUNK
+            chunk=RescaleChunk(chunk,nchans,clipsig)
+
+            #CLIP CHUNK
+            chunk=CleanChunk(chunk,nchans,clipsig)
+            #chunk=RFIclip(chunk,nchans,clipsig) #clip rfi in data chunk
 
 
         #STORE CLEANED, RESCALED CHUNK IN NEW ARRAY
