@@ -23,6 +23,7 @@ V3: 20191219  - Fixed ClipFil() description.
               - Removed dependance of ClipFil() on superflous Beam() function.
               - Removed superflous Beam() function.
               - Removed dependance on superflous RFIClip() function.
+              - Removed superflous RFIClip() function.
 
               
 """
@@ -530,48 +531,6 @@ def CleanChunk(data,nchans,sig=3.):
     return cleaned_data
 
 
-def RFIclip(data,nchans,sig=3.):
-    """
-    Mitigates timeseries RFI in filterbank data.
-
-    ALGORITHM:
-
-    1) Calls RescaleChunk()
-
-        a) Individually rescales channels to have mean 0 and stdv 1.
-
-    2) Calls CleanChunk()
-
-        b) Crunch rescaled data to get timeseries
-
-        c) Get median and stdv of timeseries
-
-        d) Find where timeseries lies outside of predefined sigma level
-
-        e) On channel-by-channel basis replace bad timesamples with random numbers drawn from gaussian
-
-    3) Returns rescaled, cleaned data chunk
-
-    INPUTS:
-
-    data   : (array-like) filterbank data
-    nchans : (int) number of filterbank channels
-    sig    : (float) standard deviations away from mean to clip after
-
-    RETURNS:
-
-    data   : (array-like) rfi-clipped data
-    """
-
-    #channel-by-channel, rescale data
-    #each channel will have a mean 0 and a standard deviation 1
-    data = RescaleChunk(data,nchans,sig)
-
-    #clean rescaled chunk   
-    data = CleanChunk(data,nchans,sig)
-
-    return data
-
 #################################################################################
 
 def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=40000):
@@ -583,11 +542,13 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
 
     CHUNKWISE RFI MITIGATION ALGORITHM:
 
-    1) Calls RescaleChunk()
+    1) Reads chunk
+
+    2) Calls RescaleChunk()
 
         a) Individually rescales channels to have mean 0 and stdv 1.
 
-    2) Calls CleanChunk()
+    3) Calls CleanChunk()
 
         b) Crunch rescaled data to get timeseries
 
@@ -597,7 +558,7 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
 
         e) On channel-by-channel basis replace bad timesamples with random numbers drawn from gaussian
 
-    3) Returns rescaled, cleaned data chunk
+    4) Returns rescaled, cleaned data chunk
 
 
     FUNCTION INPUTS:
@@ -686,8 +647,6 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
 
             #CLIP CHUNK
             chunk=CleanChunk(chunk,nchans,clipsig)
-            #chunk=RFIclip(chunk,nchans,clipsig) #clip rfi in data chunk
-
 
         #STORE CLEANED, RESCALED CHUNK IN NEW ARRAY
         data[:,:,0]=chunk #append telescope to data
