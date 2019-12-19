@@ -24,6 +24,7 @@ V3: 20191219  - Fixed ClipFil() description.
               - Removed superflous Beam() function.
               - Removed dependance on superflous RFIClip() function.
               - Removed superflous RFIClip() function.
+              - Tidied up structure and comments.
 
               
 """
@@ -578,28 +579,33 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
 
     """
     
+
+    ##INITIALISE INPUT FILTERBANK LOADING##
     print 'Input file is: ',in_fil
     fil_names=np.array([in_fil]).flatten()
     print fil_names.shape
-
     print 'loading filterbank\n'
     fils=[]
     for fil in fil_names:
         fils.append(fr(fil)) #store pointers to filterbank file
-
     print 'Calculating start mjd and samples to read and skip\n' #note, nskips should be [0] and 
                                                                  #outsamps should be the number of timesamples in the filterbank file
                                                                  #as there is only one input.
-
     outsamps,nskips,startTime,nchans = CombineFilUtils_FBoverlap(fils)
     nskips=np.zeros_like(nskips)
     print '    ...samples to skip (should be [0]): {0}'.format(nskips)
     print '    ...samples to read (should be fil length): {0}'.format(outsamps)
 
+
+
+    ##INITIALISE CHUNKING INFORMATION##
     print 'calculating data chunking information\n'
     blocksize=toload_samps
     nchunks,remainder = CombineFilUtils_FBchunking(outsamps,blocksize)
     
+
+
+    ##INITIALISE THE OUTPUT FILTERBANK FILE
     print 'initialising output filterbank\n'
     fh_out,bitrate = CombineFilUtils_InitialiseOut(fil_names,
                                                    outloc,
@@ -607,58 +613,61 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
                                                    startTime,
                                                    bitswap=bitswap)
     
+
+
+    ##SET DATA TYPE TO WRITE OUTPUT AS##
     print 'output files will be {0}-bit\n'.format(bitrate)
-    ##SET WHICH DATA TYPE TO WRITE AS##
     if bitrate==8:
         outdtype = np.uint8
     elif bitrate==32:
         outdtype = np.float32
-    
+
+
+
+    ##PERFORM RFI MITIGATION AND WRITE TO FILE##
     print 'beginning clipping\n'
-    
-
-
+   
     nfils = len(fils) #number of filterbank files to clip. Should always be 1
-
 
     for c in range(nchunks): #loop over chunks to write out
 
+        ###INITIALISE CHUNK LOADING###
         data=np.zeros((nchans,blocksize,nfils)) #declare 3D array to hold data
-
         chunk = 0 #initialise filterbank chunk
-
-
-        skip=int(round(nskips[0])) #number of blocks to skip reading at beginning of file (nskips[0] should be zero, this is vestigial from incoherent beam code)
-
-
-        blockstart=int(skip+(c*blocksize)) #start sample to read
+        skip=int(round(nskips[0])) #number of blocks to skip reading at beginning of file (nskips[0] should be zero, this is vestigial from incoherent beam code
+        blockstart=int(skip+(c*blocksize)) #start sample of chunk to read
 
         print 'Reading/Writing chunk {0}/{1}'.format(c,nchunks)
 
-        #READ CHUNK
+        ###READ CHUNK###
         chunk=fils[0].readBlock(blockstart,blocksize) #read chunk
 
-        #OPTIONAL RESCALING AND CLIPPING
+        ###OPTIONAL: RESCALING AND CLIPPING###
         if rficlip==True: #if rfi clipping mode is on:
             print 'RFI clipping...'
 
-            #RESCALE CHUNK
+            ###RESCALE CHUNK###
             chunk=RescaleChunk(chunk,nchans,clipsig)
 
-            #CLIP CHUNK
+            ###CLIP CHUNK###
             chunk=CleanChunk(chunk,nchans,clipsig)
 
-        #STORE CLEANED, RESCALED CHUNK IN NEW ARRAY
+        ###STORE CLEANED, RESCALED CHUNK IN NEW ARRAY###
         data[:,:,0]=chunk #append telescope to data
         data=data.sum(axis=2) #flatten data array over third axis. Transforms data from 3D array (of shape: [channels,times,1]) to 2D array (of shape: [channels,times])
 
-        #OPTIONAL RESCALING OF DATA PRODUCT FOR STORAGE
-
+        ###OPTIONAL: RESCALING OF DATA PRODUCT FOR STORAGE###
         if bitrate==8: #if necessary...
             data=DownSampleBits(data) #...downsample to 8-bit
 
-        #WRITE OUT CLEANED DATA TO FILE
+        ###WRITE OUT CLEANED DATA TO FILE###
         data=data.T.flatten().astype(dtype=outdtype) #reshape the data to filterbank output (low freq to high freq t1, low freq to high freq t2, ....) and recast to 32 bit float
         sppu.File.cwrite(fh_out[0], data) #write block to filterbank file
+
+
+
+    ##END FUNCTION##
+
+
 
     return
