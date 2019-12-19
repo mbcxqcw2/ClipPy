@@ -21,6 +21,8 @@ V3: 20191219  - Fixed ClipFil() description.
               - Functionised cleaning portion of RFIClip() as CleanChunk().
               - Removed superflous loop over # telescopes in ClipFil().
               - Removed dependance of ClipFil() on superflous Beam() function.
+              - Removed superflous Beam() function.
+
               
 """
 
@@ -267,28 +269,6 @@ def DownSampleBits(data,clip=4):
     
     return data
 
-
-def Beam(data):
-    """
-    Creates a beam. As the number of telescopes used in ClipFil() is always 1, this is 
-    unecessarily complicated and should be cleaned up, as you don't need to crunch over 1 telescope.
-    This is basically a vestigal algorithm from Incoherent_7.
-    
-    INPUT:
-    
-    data : (array-like) 3D array (of shape: [channels,times,ntelescopes])
-                        to beam.
-                        
-    RETURNS:
-    
-    ibeam : (array-like) 2D array (of shape: [channels,times])
-                         which has been crunched over ntelescopes (which should be 1).
-    
-    """
-    
-    ibeam = data.sum(axis=2)
-    
-    return ibeam
 
 def CombineFilUtils_FBoverlap(fils):
     """
@@ -682,9 +662,6 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
 
         #STORE CLEANED, RESCALED CHUNK IN NEW ARRAY
         data[:,:,0]=chunk #append telescope to data
-
-        #data=Beam(data) #create beam
-
         data=data.sum(axis=2) #flatten data array over third axis. Transforms data from 3D array (of shape: [channels,times,1]) to 2D array (of shape: [channels,times])
 
         #OPTIONAL RESCALING OF DATA PRODUCT FOR STORAGE
