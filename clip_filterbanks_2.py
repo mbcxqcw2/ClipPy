@@ -39,6 +39,10 @@ import sigpyproc.Utils as sppu
 from matplotlib import pyplot as plt
 from numpy.random import normal as norm
 import os
+import multiprocessing as m
+from multiprocessing import Pool
+from contextlib import closing
+from itertools import product
 
 def CombineFilUtils_FBchunking(outsamps,blocksize=1000):
     """
@@ -663,6 +667,260 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
         ###WRITE OUT CLEANED DATA TO FILE###
         data=data.T.flatten().astype(dtype=outdtype) #reshape the data to filterbank output (low freq to high freq t1, low freq to high freq t2, ....) and recast to 32 bit float
         sppu.File.cwrite(fh_out[0], data) #write block to filterbank file
+
+
+
+    ##END FUNCTION##
+
+
+
+    return
+
+
+
+def ReadChunk(datachunk):
+    """
+    helper function for reading chunk via multiprocessing. Exists because you can't
+    multiprocess using a function with multiple inputs very easily. See
+    stackoverflow question: Python multiprocessing pool.map for multiple arguments.
+    """
+    datachunk#=filAndSampAndSize[0]
+    #startsamp=filAndsampAndsize[1]
+    #blocksize=filAndsampAndsize[2]
+    print datachunk#fil,startsamp,blocksize
+
+    data=datachunk#fils[0].readBlock(startsample,blocksize)
+
+    return data
+
+def RecastChunk(datachunk,outdtype):
+    """
+    helper function for recasting data chunk via multiprocessing. Exists because you can't
+    multiprocess using a function with multiple inputs very easily. See
+    stackoverflow question: Python multiprocessing pool.map for multiple arguments.
+
+    recasts / reshape the data to filterbank output (low freq to high freq t1, low freq to high freq t2, ....) and recast to desired output bit float type
+    """
+    datachunk=datachunk.T.flatten().astype(dtype=outdtype)
+
+    return datachunk
+
+def RescaleChunk_unwrap(args):
+    """
+    helper function for rescaling chunk via multiprocessing. Exists because you can't
+    multiprocess using a function with multiple inputs very easily. See
+    stackoverflow question: Python multiprocessing pool.map for multiple arguments.
+    """
+    print args
+    datachunk=args[0]
+    nchans=args[1]
+    sig=args[2]
+    return RescaleChunk(datachunk,nchans,sig)
+
+def CleanChunk_unwrap(args):
+    """
+    helper function for cleaning chunk via multiprocessing. Exists because you can't
+    multiprocess using a function with multiple inputs very easily. See
+    stackoverflow question: Python multiprocessing pool.map for multiple arguments.
+    """
+    print args
+    rescaledchunk=args[0]
+    nchans=args[1]
+    sig=args[2]
+    return CleanChunk(rescaledchunk,nchans,sig)
+
+def RecastChunk_unwrap(args):
+    """
+    helper function for recasting data chunk via multiprocessing. Exists because you can't
+    multiprocess using a function with multiple inputs very easily. See
+    stackoverflow question: Python multiprocessing pool.map for multiple arguments.
+    """
+
+    datachunk=args[0]
+    outdtype=args[1]
+    return RecastChunk(datachunk,outdtype)
+
+
+#@contextmanager
+#def poolcontext(*args, **kwargs)
+#    yield pool
+#    pool.terminate
+
+def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=40000):
+    """
+    Same as ClipFil but parallelised for speed. See ClipFil().
+
+
+    """
+    
+
+    ##INITIALISE INPUT FILTERBANK LOADING##
+    print 'Input file is: ',in_fil
+    fil_names=np.array([in_fil]).flatten()
+    print fil_names.shape
+    print 'loading filterbank\n'
+    fils=[]
+    for fil in fil_names:
+        fils.append(fr(fil)) #store pointers to filterbank file
+    print 'Calculating start mjd and samples to read and skip\n' #note, nskips should be [0] and 
+                                                                 #outsamps should be the number of timesamples in the filterbank file
+                                                                 #as there is only one input.
+    outsamps,nskips,startTime,nchans = CombineFilUtils_FBoverlap(fils)
+    nskips=np.zeros_like(nskips)
+    print '    ...samples to skip (should be [0]): {0}'.format(nskips)
+    print '    ...samples to read (should be fil length): {0}'.format(outsamps)
+
+
+
+    ##INITIALISE CHUNKING INFORMATION##
+    print 'calculating data chunking information\n'
+    blocksize=toload_samps
+    nchunks,remainder = CombineFilUtils_FBchunking(outsamps,blocksize)
+    
+
+
+    ##INITIALISE THE OUTPUT FILTERBANK FILE
+    print 'initialising output filterbank\n'
+    fh_out,bitrate = CombineFilUtils_InitialiseOut(fil_names,
+                                                   outloc,
+                                                   outname,
+                                                   startTime,
+                                                   bitswap=bitswap)
+    
+
+
+    ##SET DATA TYPE TO WRITE OUTPUT AS##
+    print 'output files will be {0}-bit\n'.format(bitrate)
+    if bitrate==8:
+        outdtype = np.uint8
+    elif bitrate==32:
+        outdtype = np.float32
+
+
+
+    ##Initialise paralellisation##
+    ncpus = m.cpu_count()
+    print 'number of cpus which may be used at once is {0}\n'.format(ncpus)
+    n_whole_rounds = nchunks/ncpus #number of loops to be processed where all cpus are used
+    print 'number of all-cpu processing rounds will be: {0}\n'.format(n_whole_rounds)
+    n_partial_threads = nchunks%ncpus #number of cpus to be used to process remaining chunks
+    print 'number of remainder cpu processes will be: {0}\n'.format(n_partial_threads)
+    chunklist = np.arange(nchunks) #list of chunks to process
+    print 'chunks that will be processed are: {0}\n'.format(chunklist)
+    skip=int(round(nskips[0])) #number of blocks to skip reading at beginning of file (=0)
+    blockstartlist = [int(skip+(c*blocksize)) for c in chunklist] #list of chunk start samples to read
+    print 'start samples of each chunk: {0}'.format(blockstartlist)
+    print [blockstartlist[i+(0*ncpus)] for i in range(ncpus)]
+
+    #PROCESS FULL CPU ROUNDS
+
+    for count in range(n_whole_rounds): #loop over rounds of full cpu usage
+        with closing(Pool(ncpus)) as p: #invoke multiprocessing (see Python 3: does Pool keep the original order of data passed to map?) (also: Python Multiprocessing Lib Error (AttributeError: __exit__)
+
+            #testing what must be loaded into the pool
+            #print ReadChunk,[(fils[0],blockstartlist[i+(count*ncpus)],blocksize) for i in range(ncpus)]
+            #print ReadChunk,[(fils[0].readBlock(blockstartlist[i+(count*ncpus)],blocksize)) for i in range(ncpus)]
+
+            #read individual chunks into different cpus
+            chunks=p.map(ReadChunk, [(fils[0].readBlock(blockstartlist[i+(count*ncpus)],blocksize)) for i in range(ncpus)],chunksize=1) #read all chunks
+            #print 'Chunks loaded: ',chunks
+            #for chunk in chunks:
+            #    print (chunk,nchans,clipsig)
+            #rescale all chunks in cpus
+            rescaled_chunks=p.map(RescaleChunk_unwrap,([(chunk,nchans,clipsig) for chunk in chunks]),chunksize=1)
+            #print 'Chunks rescaled: ',rescaled_chunks
+            #for rchunk in rescaled_chunks:
+            #    print (rchunk,nchans,clipsig)
+            #clean all chunks in cpus
+            cleaned_chunks=p.map(CleanChunk_unwrap,([(rchunk,nchans,clipsig) for rchunk in rescaled_chunks]),chunksize=1)
+            #print 'Chunks cleaned: ',cleaned_chunks
+            #for cchunk in cleaned_chunks:
+            #    print (cchunk,nchans,clipsig)
+            #    print cchunk.shape
+
+            #optional storage rescaling
+            if bitrate==8: #if necessary...
+                out_chunks=p.map(DownSampleBits,[cchunk for cchunk in cleaned_chunks],chunksize=1) #...downsample to 8-bit
+            else:
+                out_chunks=cleaned_chunks
+            #print 'Chunks remapped: ',out_chunks
+
+            #recast data for output
+            recast_chunks=p.map(RecastChunk_unwrap,([(ochunk,outdtype) for ochunk in out_chunks]),chunksize=1)  #reshape the data to filterbank output (low freq to high freq t1, low freq to high freq t2, ....) and recast to desired bit float type
+            #print 'Chunks recast: ',recast_chunks
+
+            p.terminate()
+        #write out data to file
+        for chunk in recast_chunks:
+            sppu.File.cwrite(fh_out[0], chunk) #write block to filterbank file
+
+    #PROCESS SINGLE CPU REMAINDER ROUND
+
+
+    with closing(Pool(n_partial_threads)) as p: #invoke multiprocessing
+        #print 'FINALLY!', [fils[0].readBlock(blockstartlist[i + (ncpus*n_whole_rounds)],blocksize) for i in range(n_partial_threads)],'\n\n\n'
+        #read individual chunks into different cpus
+        chunks=p.map(ReadChunk, [fils[0].readBlock(blockstartlist[i + (ncpus*n_whole_rounds)],blocksize) for i in range(n_partial_threads)],chunksize=1) #read all chunks
+        #rescale all chunks in cpus
+        rescaled_chunks=p.map(RescaleChunk_unwrap,([(chunk,nchans,clipsig) for chunk in chunks]),chunksize=1)
+        #clean all chunks in cpus
+        cleaned_chunks=p.map(CleanChunk_unwrap,([(rchunk,nchans,clipsig) for rchunk in rescaled_chunks]),chunksize=1)
+        #optional storage rescaling
+        if bitrate==8: #if necessary...
+            out_chunks=p.map(DownSampleBits,[cchunk for cchunk in cleaned_chunks],chunksize=1) #...downsample to 8-bit
+        else:
+            out_chunks=cleaned_chunks
+        #recast data for output
+        recast_chunks=p.map(RecastChunk_unwrap,([(ochunk,outdtype) for ochunk in out_chunks]),chunksize=1)  #reshape the data to filterbank output (low freq to high freq t1, low freq to high freq t2, ....) and recast to desired bit float type
+
+        p.terminate()
+        #write out data to file
+    for chunk in recast_chunks:
+        sppu.File.cwrite(fh_out[0], chunk) #write block to filterbank file
+
+
+
+
+
+    ##PERFORM RFI MITIGATION AND WRITE TO FILE##
+    print 'beginning clipping\n'
+   
+    nfils = len(fils) #number of filterbank files to clip. Should always be 1
+
+#    for c in range(nchunks): #loop over chunks to write out
+#
+#        ###INITIALISE CHUNK LOADING###
+#        data=np.zeros((nchans,blocksize,nfils)) #declare 3D array to hold data
+#        chunk = 0 #initialise filterbank chunk
+#        skip=int(round(nskips[0])) #number of blocks to skip reading at beginning of file (nskips[0] should be zero, this is vestigial from incoherent beam code
+#        blockstart=int(skip+(c*blocksize)) #start sample of chunk to read
+#
+#        print 'Reading/Writing chunk {0}/{1}'.format(c,nchunks)
+
+#        ###READ CHUNK###
+#        chunk=fils[0].readBlock(blockstart,blocksize) #read chunk
+
+#        ###OPTIONAL: RESCALING AND CLIPPING###
+#        if rficlip==True: #if rfi clipping mode is on:
+#            print 'RFI clipping...'
+
+#            ###RESCALE CHUNK###
+#            chunk=RescaleChunk(chunk,nchans,clipsig)
+#
+#            ###CLIP CHUNK###
+#            chunk=CleanChunk(chunk,nchans,clipsig)
+
+#        ###STORE CLEANED, RESCALED CHUNK IN NEW ARRAY###
+#        data[:,:,0]=chunk #append telescope to data
+#        data=data.sum(axis=2) #flatten data array over third axis. Transforms data from 3D array (of shape: [channels,times,1]) to 2D array (of shape: [channels,times])
+
+#        ###OPTIONAL: RESCALING OF DATA PRODUCT FOR STORAGE###
+#        if bitrate==8: #if necessary...
+#            data=DownSampleBits(data) #...downsample to 8-bit
+
+#        ###WRITE OUT CLEANED DATA TO FILE###
+#        data=data.T.flatten().astype(dtype=outdtype) #reshape the data to filterbank output (low freq to high freq t1, low freq to high freq t2, ....) and recast to 32 bit float
+#        sppu.File.cwrite(fh_out[0], data) #write block to filterbank file
 
 
 
