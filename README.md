@@ -49,6 +49,8 @@ pav   (for plotting archive files)
 6) Run dspsr commands on the command line to generate plots to compare PSRB0329+54 pulse profile pre- and post- RFI clipping. This will allow you to compare the two filterbank files and see if the RFI mitigation worked:
 
 6a)   dspsr Cm1670.File1.8bit.fil -F 256 -L 10 -t 8 -k 'Jodrell' -b 1024 -E 0329+54.eph -A -O Mary_RFI
+
 6b)   dspsr Mary_test.fil -F 256 -L 10 -t 8 -k 'Jodrell' -b 1024 -E 0329+54.eph -A -O Mary_clean
+
 6c)   pav -N 1,2 -DFTp Mary*.ar
 
