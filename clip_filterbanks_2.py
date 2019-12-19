@@ -14,7 +14,9 @@ V2: 20180803  - Amended following experiments in /share/nas1/LOFT-e/experiments/
               - Updated RFIclip() to not divide channels by zero if the standard deviation of the channel is zero (which follows through with nan errors)
               -commented out warning when replacing a saturated channel (10/09/2018)
               -this is because when running on filmerged filterbanks you get loads of printouts. (lines 467 and 506)
-V3: 20191219  - Fixed ClipFil() description. Made toload_samps an input variable in ClipFil(). Fixed hardcoded RFIClip()instances of drawing numbers from Gaussians with means of of X/256 to X/np.float(nchans).
+V3: 20191219  - Fixed ClipFil() description.
+              - Made toload_samps an input variable in ClipFil().
+              - Fixed hardcoded RFIClip()instances of drawing numbers from Gaussians with means of of X/256 to X/np.float(nchans).
               
 """
 
