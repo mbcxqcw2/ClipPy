@@ -20,6 +20,7 @@ V3: 20191219  - Fixed ClipFil() description.
               - Functionised rescaling portion of RFIClip() as RescaleChunk().
               - Functionised cleaning portion of RFIClip() as CleanChunk().
               - Removed superflous loop over # telescopes in ClipFil().
+              - Removed dependance of ClipFil() on superflous Beam() function.
               
 """
 
@@ -681,7 +682,10 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
 
         #STORE CLEANED, RESCALED CHUNK IN NEW ARRAY
         data[:,:,0]=chunk #append telescope to data
-        data=Beam(data) #create beam
+
+        #data=Beam(data) #create beam
+
+        data=data.sum(axis=2) #flatten data array over third axis. Transforms data from 3D array (of shape: [channels,times,1]) to 2D array (of shape: [channels,times])
 
         #OPTIONAL RESCALING OF DATA PRODUCT FOR STORAGE
 
