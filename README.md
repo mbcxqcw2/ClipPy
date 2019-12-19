@@ -22,19 +22,25 @@ http://www.atnf.csiro.au/research/pulsar/psrcat
 # PYTHON REQUIREMENTS
 
 os
+
 numpy
+
 matplotlib
+
 astropy
+
 sigpyproc
 
 # EXTRA REQUIREMENTS
 
 dspsr (for folding pulsar data)
+
 pav   (for plotting archive files)
 
 # FILE REQUIREMENTS
 
 "Cm1670.File1.8bit.fil" (a filterbank file to be used to test the code)
+
 "Mary_test.fil"         (the result of running code on "Cm1670.File1.8bit.fil")
 
 # INSTRUCTIONS:
