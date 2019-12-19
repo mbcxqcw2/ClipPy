@@ -18,6 +18,7 @@ V3: 20191219  - Fixed ClipFil() description.
               - Made toload_samps an input variable in ClipFil().
               - Fixed hardcoded RFIClip()instances of drawing numbers from Gaussians with means of of X/256 to X/np.float(nchans).
               - Functionised rescaling portion of RFIClip() as RescaleChunk().
+              - Functionised cleaning portion of RFIClip() as CleanChunk().
               
 """
 
@@ -463,42 +464,38 @@ def RescaleChunk(data,nchans,sig=3.):
 
     return rescaled_data
 
-def RFIclip(data,nchans,sig=3.):
+
+def CleanChunk(data,nchans,sig=3.):
     """
-    Mitigates timeseries RFI in filterbank data.
+    Clips time-domain RFI from a chunk of filterbank data which has been cleaned
+    using RescaleChunk().
+    Calls iterative median clipping algorithm Median_clip().
+
 
     ALGORITHM:
 
-    1) Individually rescales channels to have mean 0 and stdv 1.
-       Uses: RescaleChunk()
+    1) Crunch data to get timeseries
 
-    2) Crunch data to get timeseries
+    2) Get median and stdv of timeseries
 
-    3) Get median and stdv of timeseries
+    3) Find where timeseries lies outside of predefined sigma level
 
-    4) Find where timeseries lies outside of predefined sigma level
+    4) On channel-by-channel basis replace bad timesamples with random numbers drawn from gaussian
 
-    5) On channel-by-channel basis replace bad timesamples with random numbers drawn from gaussian
 
     INPUTS:
 
-    data : (array-like) filterbank data
-    nchans : (int) number of filterbank channels
-    sig: (float) standard deviations away from mean to clip after
+    data   : (array-like) filterbank data chunk which has been rescaled using RescaleChunk()
+    nchans : (int) number of filterbank channels in original file
+    sig    : (float) standard deviations away from mean to clip after
+
 
     RETURNS:
 
-    data : (array-like) rfi-clipped data
+    cleaned_data : (array-like) RFI-clipped data chunk
     """
 
-    #data
-    nchans = nchans
-
-    #channel-by-channel, rescale data
-    #each channel will have a mean 0 and a standard deviation 1
-    data = RescaleChunk(data,nchans,sig)
-
-    #make timeseries
+    #make timeseries from data chunk
     timeseries=data.sum(axis=0)
 
     #get median and std of the timeseries
@@ -508,7 +505,7 @@ def RFIclip(data,nchans,sig=3.):
     print 'timeseries mean, std ', med,std
 
     #find where timeseries data lies outside of boundaries
-    #boundaries are currently 3 standard deviaions away from
+    #boundaries are std standard deviaions away from
     #the timeseries median
     
     minval = med-(sig*std)
@@ -539,10 +536,56 @@ def RFIclip(data,nchans,sig=3.):
             chan_std = 1.
             channel=np.random.normal(loc=med/np.float(nchans),scale=1,size=channel.shape)
 
-        #replace bad data with median of timeseries/256 and std of channel std
+        #replace bad data with median of timeseries/nchans and std of channel std
         channel = (toclip*np.random.normal(loc=med/np.float(nchans),scale=chan_std,size=channel.shape))+(~toclip*channel)
         #overwrite
-        data[i,:]=channel    
+        data[i,:]=channel
+
+    #rename cleaned array
+    cleaned_data = data
+
+    return cleaned_data
+
+
+def RFIclip(data,nchans,sig=3.):
+    """
+    Mitigates timeseries RFI in filterbank data.
+
+    ALGORITHM:
+
+    1) Calls RescaleChunk()
+
+        a) Individually rescales channels to have mean 0 and stdv 1.
+
+    2) Calls CleanChunk()
+
+        b) Crunch rescaled data to get timeseries
+
+        c) Get median and stdv of timeseries
+
+        d) Find where timeseries lies outside of predefined sigma level
+
+        e) On channel-by-channel basis replace bad timesamples with random numbers drawn from gaussian
+
+    3) Returns rescaled, cleaned data chunk
+
+    INPUTS:
+
+    data   : (array-like) filterbank data
+    nchans : (int) number of filterbank channels
+    sig    : (float) standard deviations away from mean to clip after
+
+    RETURNS:
+
+    data   : (array-like) rfi-clipped data
+    """
+
+    #channel-by-channel, rescale data
+    #each channel will have a mean 0 and a standard deviation 1
+    data = RescaleChunk(data,nchans,sig)
+
+    #clean rescaled chunk   
+    data = CleanChunk(data,nchans,sig)
 
     return data
 
