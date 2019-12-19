@@ -14,6 +14,7 @@ V2: 20180803  - Amended following experiments in /share/nas1/LOFT-e/experiments/
               - Updated RFIclip() to not divide channels by zero if the standard deviation of the channel is zero (which follows through with nan errors)
               -commented out warning when replacing a saturated channel (10/09/2018)
               -this is because when running on filmerged filterbanks you get loads of printouts. (lines 467 and 506)
+V3: 20191219  - Fixed ClipFil() description. Made toload_samps an input variable in ClipFil().
               
 """
 
@@ -521,21 +522,22 @@ def RFIclip(data,nchans,sig=3.):
 
 #################################################################################
 
-def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.):
+def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=40000):
     """
-    Incoherently combines filterbank files.
+    RFI clips an input filterbank file. Outputs second, clipped file with chosen name.
 
-    Inputs:
+    INPUTS:
 
-    in_fil     : input filterbank to clip (must be directory location and file name)
-    outname    : output name for clipped filterbank
-    outloc     : output folder for clipped filterbank
-    bitswap    : if True, 8-bit input will be written out as 32-bit
+    in_fil       : (str) input filterbank to clip (must be directory location and file name)
+    outname      : (str) output name for clipped filterbank
+    outloc       : (str) output folder for clipped filterbank
+    bitswap      : (True/False boolean) if True, 8-bit input will be written out as 32-bit
                  if False, 8-bit input will be written out as 8-bit
                  and vice-versa
-    rficlip    : if True, rfi sigma clipping will be applied via
+    rficlip      : (True/False boolean) if True, rfi sigma clipping will be applied via
                  timeseries data
-    clipsig    : the clipping sigma, if rficlip==True
+    clipsig      : (float) the clipping sigma, if rficlip==True
+    toload_samps : (int) the number of timesamples (spectra) to load at once while clipping.
 
 
 
@@ -560,7 +562,6 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.):
     print '    ...samples to read (should be fil length): {0}'.format(outsamps)
 
     print 'calculating data chunking information\n'
-    toload_samps = 40000#0
     blocksize=toload_samps
     nchunks,remainder = CombineFilUtils_FBchunking(outsamps,blocksize)
     
