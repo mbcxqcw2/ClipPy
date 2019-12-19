@@ -17,6 +17,7 @@ V2: 20180803  - Amended following experiments in /share/nas1/LOFT-e/experiments/
 V3: 20191219  - Fixed ClipFil() description.
               - Made toload_samps an input variable in ClipFil().
               - Fixed hardcoded RFIClip()instances of drawing numbers from Gaussians with means of of X/256 to X/np.float(nchans).
+              - Functionised rescaling portion of RFIClip() as RescaleChunk().
               
 """
 
@@ -427,13 +428,49 @@ def Median_clip(arr, sigma=3, max_iter=3, ftol=0.01, xtol=0.05, full_output=Fals
         med = med.data
     return med
 
+def RescaleChunk(data,nchans,sig=3.):
+    """
+    Individually rescales each channel in a chunk of data to have mean 0 and std 1.
+    Calls iterative median clipping algorithm Median_clip().
+
+ 
+    INPUTS:
+
+    data : (array-like) filterbank data chunk
+    nchans : (int) number of filterbank channels in original file
+    sig: (float) standard deviations away from mean to clip after
+
+
+    RETURNS:
+
+    rescaled_data : (array-like) rescaled data chunk
+    """
+
+    for j in range(nchans):
+        #data
+        channel = data[j]
+        #get mean, standard deviation
+        mean,std,mask = Median_clip(channel,sig,max_iter=5,full_output=True,xtol=0.5)#edit: max_iter 10>5
+        if std==0.0:
+            #print 'WARNING: Channel', j, 'mean, std ',mean,std
+            channel-=mean
+        else:
+            channel-=mean
+        #divide by std
+            channel/=std
+
+    rescaled_data = data
+
+    return rescaled_data
+
 def RFIclip(data,nchans,sig=3.):
     """
     Mitigates timeseries RFI in filterbank data.
 
     ALGORITHM:
 
-    1) Individually rescales channels to have mean 0 and stdv 1
+    1) Individually rescales channels to have mean 0 and stdv 1.
+       Uses: RescaleChunk()
 
     2) Crunch data to get timeseries
 
@@ -455,24 +492,11 @@ def RFIclip(data,nchans,sig=3.):
     """
 
     #data
-    data = data
     nchans = nchans
 
     #channel-by-channel, rescale data
     #each channel will have a mean 0 and a standard deviation 1
-
-    for j in range(nchans):
-        #data
-        channel = data[j]
-        #get mean, standard deviation
-        mean,std,mask = Median_clip(channel,sig,max_iter=5,full_output=True,xtol=0.5)#edit: max_iter 10>5
-        if std==0.0:
-            #print 'WARNING: Channel', j, 'mean, std ',mean,std
-            channel-=mean
-        else:
-            channel-=mean
-        #divide by std
-            channel/=std
+    data = RescaleChunk(data,nchans,sig)
 
     #make timeseries
     timeseries=data.sum(axis=0)
