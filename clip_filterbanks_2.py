@@ -14,7 +14,7 @@ V2: 20180803  - Amended following experiments in /share/nas1/LOFT-e/experiments/
               - Updated RFIclip() to not divide channels by zero if the standard deviation of the channel is zero (which follows through with nan errors)
               -commented out warning when replacing a saturated channel (10/09/2018)
               -this is because when running on filmerged filterbanks you get loads of printouts. (lines 467 and 506)
-V3: 20191219  - Fixed ClipFil() description. Made toload_samps an input variable in ClipFil().
+V3: 20191219  - Fixed ClipFil() description. Made toload_samps an input variable in ClipFil(). Fixed hardcoded instances of drawing numbers from Gaussians with means of of X/256 to X/np.float(nchans).
               
 """
 
@@ -494,7 +494,7 @@ def RFIclip(data,nchans,sig=3.):
     #for each channel, replace timesamples which, in the timeseries, lay outside
     #of the clipping range, with new numbers
     #the numbers are randomly drawn from a gaussian
-    #the gaussian has a mean of the timeseries median/256 (so when summed, they will
+    #the gaussian has a mean of the timeseries median/nchans (so when summed, they will
     #lie around the correct mean) and a standard deviation of the channel (which ideally
     #should be 1)
     
@@ -511,10 +511,10 @@ def RFIclip(data,nchans,sig=3.):
             # saturated for this timeseries and should be replaced with randoms
             # drawn from gaussian with mean: median/nchans and std: 1 (I think) so insert below line:
             chan_std = 1.
-            channel=np.random.normal(loc=med/256.0,scale=1,size=channel.shape)
+            channel=np.random.normal(loc=med/np.float(nchans),scale=1,size=channel.shape)
 
         #replace bad data with median of timeseries/256 and std of channel std
-        channel = (toclip*np.random.normal(loc=med/256.0,scale=chan_std,size=channel.shape))+(~toclip*channel)
+        channel = (toclip*np.random.normal(loc=med/np.float(nchans),scale=chan_std,size=channel.shape))+(~toclip*channel)
         #overwrite
         data[i,:]=channel    
 
