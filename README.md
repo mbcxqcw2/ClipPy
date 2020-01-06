@@ -2,6 +2,8 @@
 
 This script performs time-domain RFI clipping on 8-bit or 32-bit filterbank files.
 
+RFI clipping is run twice: once with the single-CPU ClipFil() function, and then again with its multiprocessing ClipFilFast() version.
+
 All code was developed for e-MERLIN's LOFT-e observing system.
 
 Code was developed by Charles Walker (walker.mbcxqcw2@gmail.com). Median clipping algorithm was developed by Rene Breton.
@@ -27,6 +29,10 @@ numpy
 
 matplotlib
 
+multiprocessing
+
+contextlib
+
 astropy
 
 sigpyproc
@@ -50,13 +56,18 @@ pav   (for plotting archive files)
 
 3) Run "python Mary_Clipping_Script.py" from the command line
 4) The file "Cm1670.File1.8bit.fil" will be RFI clipped and output as "Mary_test.fil"
-5) Compare the output file to the reference file downloaded. These should be identical.
+5) The file will also be RFI clipped and output by the multiprocessor version of the code and output as "Mary_fast.fil".
+6) Compare the output files to the reference file downloaded. These should be identical.
 
-6) Run dspsr commands on the command line to generate plots to compare PSRB0329+54 pulse profile pre- and post- RFI clipping. This will allow you to compare the two filterbank files and see if the RFI mitigation worked:
+7) Run dspsr commands on the command line to generate plots to compare PSRB0329+54 pulse profile pre- and post- RFI clipping. This will allow you to compare the three filterbank files and see if the RFI mitigation worked:
 
-6a)   dspsr Cm1670.File1.8bit.fil -F 256 -L 10 -t 8 -k 'Jodrell' -b 1024 -E 0329+54.eph -A -O Mary_RFI
+7a)   dspsr Cm1670.File1.8bit.fil -F 256 -L 10 -t 8 -k 'Jodrell' -b 1024 -E 0329+54.eph -A -O Mary_RFI
 
-6b)   dspsr Mary_test.fil -F 256 -L 10 -t 8 -k 'Jodrell' -b 1024 -E 0329+54.eph -A -O Mary_clean
+7b)   dspsr Mary_test.fil -F 256 -L 10 -t 8 -k 'Jodrell' -b 1024 -E 0329+54.eph -A -O Mary_clean
 
-6c)   pav -N 1,2 -DFTp Mary*.ar
+7c)   dspsr Mary_fast.fil -F 256 -L 10 -t 8 -k 'Jodrell' -b 1024 -E 0329+54.eph -A -O Mary_fastclean
+
+7d)   pav -N 1,3 -DFTp Mary*.ar --ch 2
+7e)   pav -N 1,3 -YFd Mary*.ar --ch 2
+7f)   pav -N 1,3 -GTd Mary*.ar --ch 2
 
