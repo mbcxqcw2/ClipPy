@@ -27,7 +27,8 @@ V3: 20191219  - Fixed ClipFil() description.
               - Tidied up structure and comments.
               - Added Multiprocessing ClipFilFast() function.
 
-V4: 20200106  - Tidied up ClipFilFast() function
+V4: 20200106  - Tidied up ClipFilFast() function.
+              - Made ClipFilFast() dependent on rficlip option again.
 
               
 """
@@ -826,66 +827,86 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
     ##PROCESS WHOLE CHUNK SETS##
 
     for count in range(n_whole_chunk_sets): #loop over rounds of full cpu usage
-
         print 'Processing complete {0}-subchunk chunk set {1}/{2}...'.format(ncpus,count+1,n_whole_chunk_sets)
 
         with closing(Pool(ncpus)) as p: #invoke multiprocessing (see stackoverflow threads: "Python 3: does Pool keep the original order of data passed to map?" and: "Python Multiprocessing Lib Error (AttributeError: __exit__)"
 
-            #read subchunks into different cpus
+
+            ###READ SUBCHUNKS INTO DIFFERENT CPUS###
             subchunks=p.map(ReadChunk, [(fils[0].readBlock(blockstartlist[i+(count*ncpus)],blocksize)) for i in range(ncpus)],chunksize=1) #Note: from stackoverflow thread: "multiprocessing pool.map not processing list in order" the pool variable "chunksize=1" here forces subchunks to be processed in order
 
 
-            #rescale all subchunks in cpus
-            rescaled_subchunks=p.map(RescaleChunk_unwrap,([(subchunk,nchans,clipsig) for subchunk in subchunks]),chunksize=1)
+            ###OPTIONAL: RESCALING AND CLIPPING###
+            if rficlip==True: #if rfi clipping mode is on:
+                print 'RFI clipping...'
+                #rescale all subchunks in cpus
+                rescaled_subchunks=p.map(RescaleChunk_unwrap,([(subchunk,nchans,clipsig) for subchunk in subchunks]),chunksize=1)
+                #clean all subchunks in cpus
+                cleaned_subchunks=p.map(CleanChunk_unwrap,([(r_subchunk,nchans,clipsig) for r_subchunk in rescaled_subchunks]),chunksize=1)
+            elif rficlip==False: #else:
+                print 'Data will not be clipped.'
+                #do not modify the subchunks
+                cleaned_subchunks = subchunks
 
-            #clean all subchunks in cpus
-            cleaned_subchunks=p.map(CleanChunk_unwrap,([(r_subchunk,nchans,clipsig) for r_subchunk in rescaled_subchunks]),chunksize=1)
 
-            #(Optional!) storage rescaling
+            ###OPTIONAL: RESCALING OF DATA PRODUCT FOR STORAGE###
             if bitrate==8: #if necessary...
                 out_subchunks=p.map(DownSampleBits,[c_subchunk for c_subchunk in cleaned_subchunks],chunksize=1) #...downsample to 8-bit
             else:
                 out_subchunks=cleaned_subchunks
-            #print 'Chunks remapped: ',out_chunks
 
-            #recast data for output
+
+            ###RECAST DATA FOR OUTPUT###
             recast_subchunks=p.map(RecastChunk_unwrap,([(o_subchunk,outdtype) for o_subchunk in out_subchunks]),chunksize=1)  #reshape the data to filterbank output (low freq to high freq t1, low freq to high freq t2, ....) and recast to desired bit float type
+
 
             p.terminate()
 
-        #write out data to file
+
+        ###WRITE OUT DATA TO FILE###
         for subchunk in recast_subchunks:
             sppu.File.cwrite(fh_out[0], subchunk) #write subchunk to filterbank file
 
-    #PROCESS SINGLE CPU REMAINDER ROUND
 
+    ##PROCESS SINGLE CPU REMAINDER ROUND##
     print 'Processing remaining {0} subchunks...'.format(n_partial_chunk_set)
 
 
     with closing(Pool(n_partial_chunk_set)) as p: #invoke multiprocessing
        
 
-        #read individual subchunks into different cpus
+        ###READ INDIVIDUAL SUBCHUNKS INTO CPUS###
         subchunks=p.map(ReadChunk, [fils[0].readBlock(blockstartlist[i + (ncpus*n_whole_chunk_sets)],blocksize) for i in range(n_partial_chunk_set)],chunksize=1)
 
-        #rescale all subchunks in cpus
-        rescaled_subchunks=p.map(RescaleChunk_unwrap,([(subchunk,nchans,clipsig) for subchunk in subchunks]),chunksize=1)
 
-        #clean all subchunks in cpus
-        cleaned_subchunks=p.map(CleanChunk_unwrap,([(r_subchunk,nchans,clipsig) for r_subchunk in rescaled_subchunks]),chunksize=1)
+        ###OPTIONAL: RESCALING AND CLIPPING###
+        if rficlip==True: #if rfi clipping mode is on:
+            print 'RFI clipping...'
+            #rescale all subchunks in cpus
+            rescaled_subchunks=p.map(RescaleChunk_unwrap,([(subchunk,nchans,clipsig) for subchunk in subchunks]),chunksize=1)
+            #clean all subchunks in cpus
+            cleaned_subchunks=p.map(CleanChunk_unwrap,([(r_subchunk,nchans,clipsig) for r_subchunk in rescaled_subchunks]),chunksize=1)
+        elif rficlip==False: #else:
+            print 'Data will not be clipped.'
+            #do not modify the subchunks
+            cleaned_subchunks = subchunks
 
-        #(Optional!) storage rescaling
+
+        ###OPTIONAL: RESCALING OF DATA PRODUCT FOR STORAGE###
         if bitrate==8: #if necessary...
             out_subchunks=p.map(DownSampleBits,[c_subchunk for c_subchunk in cleaned_subchunks],chunksize=1) #...downsample to 8-bit
         else:
             out_subchunks=cleaned_subchunks
 
-        #recast data for output
+
+        ###RECAST DATA FOR OUTPUT###
         recast_subchunks=p.map(RecastChunk_unwrap,([(o_subchunk,outdtype) for o_subchunk in out_subchunks]),chunksize=1)  #reshape the data to filterbank output (low freq to high freq t1, low freq to high freq t2, ....) and recast to desired bit float type
+
 
         p.terminate()
 
-        #write out data to file
+
+        ###WRITE OUT DATA TO FILE###
     for subchunk in recast_subchunks:
         sppu.File.cwrite(fh_out[0], subchunk) #write block to filterbank file
 
