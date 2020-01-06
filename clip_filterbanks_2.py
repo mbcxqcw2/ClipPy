@@ -801,94 +801,94 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
 
 
 
-    ##Initialise paralellisation##
-    ncpus = m.cpu_count()
-    print 'number of cpus which may be used at once is {0}\n'.format(ncpus)
-    n_whole_rounds = nchunks/ncpus #number of loops to be processed where all cpus are used
-    print 'number of all-cpu processing rounds will be: {0}\n'.format(n_whole_rounds)
-    n_partial_threads = nchunks%ncpus #number of cpus to be used to process remaining chunks
-    print 'number of remainder cpu processes will be: {0}\n'.format(n_partial_threads)
-    chunklist = np.arange(nchunks) #list of chunks to process
-    print 'chunks that will be processed are: {0}\n'.format(chunklist)
+    #INITIALISE PARALELLISATION##
+    ncpus = m.cpu_count() #count available cpus
+    print 'Maximum number of cpus which may be used at once is: {0}'.format(ncpus)
+    print 'The total number of subchunks to process is: {0}'.format(nchunks)
+    print 'The number of subchunks to be processed in one chunk set is: {0}'.format(ncpus)
+
+    n_whole_chunk_sets = nchunks/ncpus #calculate the number of sets of chunks where all cpus will be used to be processed
+    print 'The number of complete chunk sets to be processed is: {0}'.format(n_whole_chunk_sets)
+
+    n_partial_chunk_set = nchunks%ncpus #calculate the number of cpus which must be used to process any remaining chunks
+    print 'The number of remainder subchunks to be processed is: {0}\n'.format(n_partial_chunk_set)
+
+    subchunklist = np.arange(nchunks) #list of subchunks to process
+    print 'The subchunks to be processed are: {0}'.format(subchunklist)
+
     skip=int(round(nskips[0])) #number of blocks to skip reading at beginning of file (=0)
-    blockstartlist = [int(skip+(c*blocksize)) for c in chunklist] #list of chunk start samples to read
-    print 'start samples of each chunk: {0}'.format(blockstartlist)
-    print [blockstartlist[i+(0*ncpus)] for i in range(ncpus)]
+    blockstartlist = [int(skip+(c*blocksize)) for c in subchunklist] #list of chunk start samples to read
+    print 'The start samples to be read for each subchunk are: {0}\n'.format(blockstartlist)
 
-    #PROCESS FULL CPU ROUNDS
+    #print [blockstartlist[i+(0*ncpus)] for i in range(ncpus)]
 
-    for count in range(n_whole_rounds): #loop over rounds of full cpu usage
-        with closing(Pool(ncpus)) as p: #invoke multiprocessing (see Python 3: does Pool keep the original order of data passed to map?) (also: Python Multiprocessing Lib Error (AttributeError: __exit__)
 
-            #testing what must be loaded into the pool
-            #print ReadChunk,[(fils[0],blockstartlist[i+(count*ncpus)],blocksize) for i in range(ncpus)]
-            #print ReadChunk,[(fils[0].readBlock(blockstartlist[i+(count*ncpus)],blocksize)) for i in range(ncpus)]
+    ##PROCESS WHOLE CHUNK SETS##
 
-            #read individual chunks into different cpus
-            chunks=p.map(ReadChunk, [(fils[0].readBlock(blockstartlist[i+(count*ncpus)],blocksize)) for i in range(ncpus)],chunksize=1) #read all chunks
-            #print 'Chunks loaded: ',chunks
-            #for chunk in chunks:
-            #    print (chunk,nchans,clipsig)
-            #rescale all chunks in cpus
-            rescaled_chunks=p.map(RescaleChunk_unwrap,([(chunk,nchans,clipsig) for chunk in chunks]),chunksize=1)
-            #print 'Chunks rescaled: ',rescaled_chunks
-            #for rchunk in rescaled_chunks:
-            #    print (rchunk,nchans,clipsig)
-            #clean all chunks in cpus
-            cleaned_chunks=p.map(CleanChunk_unwrap,([(rchunk,nchans,clipsig) for rchunk in rescaled_chunks]),chunksize=1)
-            #print 'Chunks cleaned: ',cleaned_chunks
-            #for cchunk in cleaned_chunks:
-            #    print (cchunk,nchans,clipsig)
-            #    print cchunk.shape
+    for count in range(n_whole_chunk_sets): #loop over rounds of full cpu usage
 
-            #optional storage rescaling
+        print 'Processing complete {0}-subchunk chunk set {1}/{2}...'.format(ncpus,count+1,n_whole_chunk_sets)
+
+        with closing(Pool(ncpus)) as p: #invoke multiprocessing (see stackoverflow threads: "Python 3: does Pool keep the original order of data passed to map?" and: "Python Multiprocessing Lib Error (AttributeError: __exit__)"
+
+            #read subchunks into different cpus
+            subchunks=p.map(ReadChunk, [(fils[0].readBlock(blockstartlist[i+(count*ncpus)],blocksize)) for i in range(ncpus)],chunksize=1) #Note: from stackoverflow thread: "multiprocessing pool.map not processing list in order" the pool variable "chunksize=1" here forces subchunks to be processed in order
+
+
+            #rescale all subchunks in cpus
+            rescaled_subchunks=p.map(RescaleChunk_unwrap,([(subchunk,nchans,clipsig) for subchunk in subchunks]),chunksize=1)
+
+            #clean all subchunks in cpus
+            cleaned_subchunks=p.map(CleanChunk_unwrap,([(r_subchunk,nchans,clipsig) for r_subchunk in rescaled_subchunks]),chunksize=1)
+
+            #(Optional!) storage rescaling
             if bitrate==8: #if necessary...
-                out_chunks=p.map(DownSampleBits,[cchunk for cchunk in cleaned_chunks],chunksize=1) #...downsample to 8-bit
+                out_subchunks=p.map(DownSampleBits,[c_subchunk for c_subchunk in cleaned_subchunks],chunksize=1) #...downsample to 8-bit
             else:
-                out_chunks=cleaned_chunks
+                out_subchunks=cleaned_subchunks
             #print 'Chunks remapped: ',out_chunks
 
             #recast data for output
-            recast_chunks=p.map(RecastChunk_unwrap,([(ochunk,outdtype) for ochunk in out_chunks]),chunksize=1)  #reshape the data to filterbank output (low freq to high freq t1, low freq to high freq t2, ....) and recast to desired bit float type
-            #print 'Chunks recast: ',recast_chunks
+            recast_subchunks=p.map(RecastChunk_unwrap,([(o_subchunk,outdtype) for o_subchunk in out_subchunks]),chunksize=1)  #reshape the data to filterbank output (low freq to high freq t1, low freq to high freq t2, ....) and recast to desired bit float type
 
             p.terminate()
+
         #write out data to file
-        for chunk in recast_chunks:
-            sppu.File.cwrite(fh_out[0], chunk) #write block to filterbank file
+        for subchunk in recast_subchunks:
+            sppu.File.cwrite(fh_out[0], subchunk) #write subchunk to filterbank file
 
     #PROCESS SINGLE CPU REMAINDER ROUND
 
+    print 'Processing remaining {0} subchunks...'.format(n_partial_chunk_set)
 
-    with closing(Pool(n_partial_threads)) as p: #invoke multiprocessing
-        #print 'FINALLY!', [fils[0].readBlock(blockstartlist[i + (ncpus*n_whole_rounds)],blocksize) for i in range(n_partial_threads)],'\n\n\n'
-        #read individual chunks into different cpus
-        chunks=p.map(ReadChunk, [fils[0].readBlock(blockstartlist[i + (ncpus*n_whole_rounds)],blocksize) for i in range(n_partial_threads)],chunksize=1) #read all chunks
-        #rescale all chunks in cpus
-        rescaled_chunks=p.map(RescaleChunk_unwrap,([(chunk,nchans,clipsig) for chunk in chunks]),chunksize=1)
-        #clean all chunks in cpus
-        cleaned_chunks=p.map(CleanChunk_unwrap,([(rchunk,nchans,clipsig) for rchunk in rescaled_chunks]),chunksize=1)
-        #optional storage rescaling
+
+    with closing(Pool(n_partial_chunk_set)) as p: #invoke multiprocessing
+       
+
+        #read individual subchunks into different cpus
+        subchunks=p.map(ReadChunk, [fils[0].readBlock(blockstartlist[i + (ncpus*n_whole_chunk_sets)],blocksize) for i in range(n_partial_chunk_set)],chunksize=1)
+
+        #rescale all subchunks in cpus
+        rescaled_subchunks=p.map(RescaleChunk_unwrap,([(subchunk,nchans,clipsig) for subchunk in subchunks]),chunksize=1)
+
+        #clean all subchunks in cpus
+        cleaned_subchunks=p.map(CleanChunk_unwrap,([(r_subchunk,nchans,clipsig) for r_subchunk in rescaled_subchunks]),chunksize=1)
+
+        #(Optional!) storage rescaling
         if bitrate==8: #if necessary...
-            out_chunks=p.map(DownSampleBits,[cchunk for cchunk in cleaned_chunks],chunksize=1) #...downsample to 8-bit
+            out_subchunks=p.map(DownSampleBits,[c_subchunk for c_subchunk in cleaned_subchunks],chunksize=1) #...downsample to 8-bit
         else:
-            out_chunks=cleaned_chunks
+            out_subchunks=cleaned_subchunks
+
         #recast data for output
-        recast_chunks=p.map(RecastChunk_unwrap,([(ochunk,outdtype) for ochunk in out_chunks]),chunksize=1)  #reshape the data to filterbank output (low freq to high freq t1, low freq to high freq t2, ....) and recast to desired bit float type
+        recast_subchunks=p.map(RecastChunk_unwrap,([(o_subchunk,outdtype) for o_subchunk in out_subchunks]),chunksize=1)  #reshape the data to filterbank output (low freq to high freq t1, low freq to high freq t2, ....) and recast to desired bit float type
 
         p.terminate()
+
         #write out data to file
-    for chunk in recast_chunks:
-        sppu.File.cwrite(fh_out[0], chunk) #write block to filterbank file
+    for subchunk in recast_subchunks:
+        sppu.File.cwrite(fh_out[0], subchunk) #write block to filterbank file
 
-
-
-
-
-    ##PERFORM RFI MITIGATION AND WRITE TO FILE##
-    print 'beginning clipping\n'
-   
-    nfils = len(fils) #number of filterbank files to clip. Should always be 1
 
 
     ##END FUNCTION##
