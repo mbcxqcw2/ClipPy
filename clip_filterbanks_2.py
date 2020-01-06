@@ -30,6 +30,7 @@ V3: 20191219  - Fixed ClipFil() description.
 V4: 20200106  - Tidied up ClipFilFast() function.
               - Made ClipFilFast() dependent on rficlip option again.
               - Cleaned up ReadChunk() helper function.
+              - Cleaned up RecastChunk() helper function.
 
               
 """
@@ -686,7 +687,7 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
 def ReadChunk(datachunk):
     """
     A helper function for reading chunk via multiprocessing. Exists because you can't
-    multiprocess using a function with multiple inputs very easily. See
+    multiprocess using a function with multiple inputs in Python 2.7 very easily. See
     stackoverflow thread: "Python multiprocessing pool.map for multiple arguments".
 
 
@@ -696,7 +697,7 @@ def ReadChunk(datachunk):
 
     RETURNS:
 
-    data :    : (array-like) a copy of datachunk
+    data      : (array-like) a copy of datachunk
 
     """
 
@@ -706,11 +707,23 @@ def ReadChunk(datachunk):
 
 def RecastChunk(datachunk,outdtype):
     """
-    helper function for recasting data chunk via multiprocessing. Exists because you can't
-    multiprocess using a function with multiple inputs very easily. See
-    stackoverflow question: Python multiprocessing pool.map for multiple arguments.
+    A helper function for recasting data chunk via multiprocessing. Exists because you
+    can't multiprocess using a function with multiple inputs in Python 2.7 very easily.
+    See stackoverflow thread: "Python multiprocessing pool.map for multiple arguments".
 
-    recasts / reshape the data to filterbank output (low freq to high freq t1, low freq to high freq t2, ....) and recast to desired output bit float type
+    This function reshapes input data to sigpyproc filterbank output (low freq to
+    high freq t1, low freq to high freq t2, ....) and recasts it to a desired
+    output bit float type.
+
+    INPUTS:
+
+    datachunk : (array-like) a chunk of filterbank data read by sigpyproc's readBlock().
+    outdtype  : either np.uint8 or np.float32
+
+    RETURNS:
+
+    datachunk : (array-like) recast/reshaped filterbank data.
+
     """
     datachunk=datachunk.T.flatten().astype(dtype=outdtype)
 
