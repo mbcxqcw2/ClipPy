@@ -34,6 +34,7 @@ V4: 20200106  - Tidied up ClipFilFast() function.
               - Cleaned up RescaleChunk_unwrap() helper function.
               - Cleaned up CleanChunk_unwrap() helper function.
               - Cleaned up RecastChunk_unwrap() helper function.
+              - Removed uneccesary import of itertools.product
 
               
 """
@@ -51,7 +52,6 @@ import os
 import multiprocessing as m
 from multiprocessing import Pool
 from contextlib import closing
-from itertools import product
 
 def CombineFilUtils_FBchunking(outsamps,blocksize=1000):
     """
