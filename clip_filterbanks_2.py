@@ -832,7 +832,7 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
 
 
             ###READ SUBCHUNKS INTO DIFFERENT CPUS###
-            subchunks=p.map(ReadChunk, [(fils[0].readBlock(blockstartlist[i+(count*ncpus)],blocksize)) for i in range(ncpus)],chunksize=1) #Note: from stackoverflow thread: "multiprocessing pool.map not processing list in order" the pool variable "chunksize=1" here forces subchunks to be processed in order
+            subchunks=p.map(ReadChunk, [(fils[0].readBlock(blockstartlist[i+(count*ncpus)],blocksize)) for i in range(ncpus)],chunksize=1) #Note: from stackoverflow threads: "Python 3: does Pool keep the original order of data passed to map?" and "multiprocessing pool.map not processing list in order", the use of pool with the variable "chunksize=1" should force subchunks to be processed/output to new array in order if Python 2.7 works in the same way as Python 3. Need to check to see if this is true.
 
 
             ###OPTIONAL: RESCALING AND CLIPPING###
