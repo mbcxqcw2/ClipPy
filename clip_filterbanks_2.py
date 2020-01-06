@@ -29,6 +29,7 @@ V3: 20191219  - Fixed ClipFil() description.
 
 V4: 20200106  - Tidied up ClipFilFast() function.
               - Made ClipFilFast() dependent on rficlip option again.
+              - Cleaned up ReadChunk() helper function.
 
               
 """
@@ -684,14 +685,20 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
 
 def ReadChunk(datachunk):
     """
-    helper function for reading chunk via multiprocessing. Exists because you can't
+    A helper function for reading chunk via multiprocessing. Exists because you can't
     multiprocess using a function with multiple inputs very easily. See
-    stackoverflow question: Python multiprocessing pool.map for multiple arguments.
+    stackoverflow thread: "Python multiprocessing pool.map for multiple arguments".
+
+
+    INPUTS:
+
+    datachunk : (array-like) a chunk of filterbank data read by sigpyproc's readBlock()
+
+    RETURNS:
+
+    data :    : (array-like) a copy of datachunk
+
     """
-    datachunk#=filAndSampAndSize[0]
-    #startsamp=filAndsampAndsize[1]
-    #blocksize=filAndsampAndsize[2]
-    print datachunk#fil,startsamp,blocksize
 
     data=datachunk#fils[0].readBlock(startsample,blocksize)
 
