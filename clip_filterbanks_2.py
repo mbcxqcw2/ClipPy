@@ -25,6 +25,7 @@ V3: 20191219  - Fixed ClipFil() description.
               - Removed dependance on superflous RFIClip() function.
               - Removed superflous RFIClip() function.
               - Tidied up structure and comments.
+              - Added Multiprocessing ClipFilFast() function.
 
               
 """
