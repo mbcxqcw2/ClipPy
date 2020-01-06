@@ -864,7 +864,9 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
 
 
             ###RECAST DATA FOR OUTPUT###
-            recast_subchunks=p.map(RecastChunk_unwrap,([(o_subchunk,outdtype) for o_subchunk in out_subchunks]),chunksize=1)  #reshape the data to filterbank output (low freq to high freq t1, low freq to high freq t2, ....) and recast to desired bit float type
+            recast_subchunks=p.map(RecastChunk_unwrap,([(o_subchunk,outdtype) for o_subchunk in out_subchunks]),chunksize=1)
+            #reshape the data to filterbank output (low freq to high freq t1, low
+            # freq to high freq t2, ....) and recast to desired bit float type
 
 
             p.terminate()
@@ -907,7 +909,9 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
 
 
         ###RECAST DATA FOR OUTPUT###
-        recast_subchunks=p.map(RecastChunk_unwrap,([(o_subchunk,outdtype) for o_subchunk in out_subchunks]),chunksize=1)  #reshape the data to filterbank output (low freq to high freq t1, low freq to high freq t2, ....) and recast to desired bit float type
+        recast_subchunks=p.map(RecastChunk_unwrap,([(o_subchunk,outdtype) for o_subchunk in out_subchunks]),chunksize=1)
+        #reshape the data to filterbank output (low freq to high freq t1, low freq to
+        # high freq t2, ....) and recast to desired bit float type
 
 
         p.terminate()
