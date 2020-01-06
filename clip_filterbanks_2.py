@@ -867,7 +867,7 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
             sppu.File.cwrite(fh_out[0], subchunk) #write subchunk to filterbank file
 
 
-    ##PROCESS SINGLE CPU REMAINDER ROUND##
+    ##PROCESS PARTIAL REMAINING SUBCHUNKS##
     print 'Processing remaining {0} subchunks...'.format(n_partial_chunk_set)
 
 
