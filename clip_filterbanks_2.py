@@ -27,6 +27,8 @@ V3: 20191219  - Fixed ClipFil() description.
               - Tidied up structure and comments.
               - Added Multiprocessing ClipFilFast() function.
 
+V4: 20200106  - Tidied up ClipFilFast() function
+
               
 """
 
@@ -887,42 +889,6 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
     print 'beginning clipping\n'
    
     nfils = len(fils) #number of filterbank files to clip. Should always be 1
-
-#    for c in range(nchunks): #loop over chunks to write out
-#
-#        ###INITIALISE CHUNK LOADING###
-#        data=np.zeros((nchans,blocksize,nfils)) #declare 3D array to hold data
-#        chunk = 0 #initialise filterbank chunk
-#        skip=int(round(nskips[0])) #number of blocks to skip reading at beginning of file (nskips[0] should be zero, this is vestigial from incoherent beam code
-#        blockstart=int(skip+(c*blocksize)) #start sample of chunk to read
-#
-#        print 'Reading/Writing chunk {0}/{1}'.format(c,nchunks)
-
-#        ###READ CHUNK###
-#        chunk=fils[0].readBlock(blockstart,blocksize) #read chunk
-
-#        ###OPTIONAL: RESCALING AND CLIPPING###
-#        if rficlip==True: #if rfi clipping mode is on:
-#            print 'RFI clipping...'
-
-#            ###RESCALE CHUNK###
-#            chunk=RescaleChunk(chunk,nchans,clipsig)
-#
-#            ###CLIP CHUNK###
-#            chunk=CleanChunk(chunk,nchans,clipsig)
-
-#        ###STORE CLEANED, RESCALED CHUNK IN NEW ARRAY###
-#        data[:,:,0]=chunk #append telescope to data
-#        data=data.sum(axis=2) #flatten data array over third axis. Transforms data from 3D array (of shape: [channels,times,1]) to 2D array (of shape: [channels,times])
-
-#        ###OPTIONAL: RESCALING OF DATA PRODUCT FOR STORAGE###
-#        if bitrate==8: #if necessary...
-#            data=DownSampleBits(data) #...downsample to 8-bit
-
-#        ###WRITE OUT CLEANED DATA TO FILE###
-#        data=data.T.flatten().astype(dtype=outdtype) #reshape the data to filterbank output (low freq to high freq t1, low freq to high freq t2, ....) and recast to 32 bit float
-#        sppu.File.cwrite(fh_out[0], data) #write block to filterbank file
-
 
 
     ##END FUNCTION##
