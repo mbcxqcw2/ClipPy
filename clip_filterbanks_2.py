@@ -33,6 +33,7 @@ V4: 20200106  - Tidied up ClipFilFast() function.
               - Cleaned up RecastChunk() helper function.
               - Cleaned up RescaleChunk_unwrap() helper function.
               - Cleaned up CleanChunk_unwrap() helper function.
+              - Cleaned up RecastChunk_unwrap() helper function.
 
               
 """
@@ -796,13 +797,31 @@ def CleanChunk_unwrap(args):
 
 def RecastChunk_unwrap(args):
     """
-    helper function for recasting data chunk via multiprocessing. Exists because you can't
-    multiprocess using a function with multiple inputs very easily. See
-    stackoverflow question: Python multiprocessing pool.map for multiple arguments.
+    A helper function for recasting data chunk via multiprocessing. Exists because you
+    can't multiprocess using a function with multiple inputs in Python 2.7 very easily.
+    See stackoverflow thread: "Python multiprocessing pool.map for multiple arguments".
+
+    This function unpacks a chunk of data and information necessary for recasting, and
+    passes them into RecastChunk().
+
+    INPUTS:
+
+    args : a list containing 2 arguments in the following order:
+
+           datachunk : (array-like) a chunk of filterbank data read by
+           sigpyproc's readBlock()
+
+           outdtype  : either np.uint8 or np.float32
+
+    RETURNS:
+
+    output of RecastChunk()
+
     """
 
     datachunk=args[0]
     outdtype=args[1]
+
     return RecastChunk(datachunk,outdtype)
 
 
