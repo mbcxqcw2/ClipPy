@@ -828,7 +828,10 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
     for count in range(n_complete_chunk_sets): #loop over rounds of full cpu usage
         print 'Processing complete {0}-subchunk chunk set {1}/{2}...'.format(ncpus,count+1,n_complete_chunk_sets)
 
-        with closing(Pool(ncpus)) as p: #invoke multiprocessing (see stackoverflow threads: "Python 3: does Pool keep the original order of data passed to map?" and: "Python Multiprocessing Lib Error (AttributeError: __exit__)"
+        with closing(Pool(ncpus)) as p:
+        #invoke multiprocessing (see stackoverflow threads: "Python 3: does
+        # Pool keep the original order of data passed to map?" and: "Python
+        # Multiprocessing Lib Error (AttributeError: __exit__)"
 
 
             ###READ SUBCHUNKS INTO DIFFERENT CPUS###
