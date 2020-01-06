@@ -808,8 +808,8 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
     print 'The total number of subchunks to process is: {0}'.format(nchunks)
     print 'The number of subchunks to be processed in one chunk set is: {0}'.format(ncpus)
 
-    n_whole_chunk_sets = nchunks/ncpus #calculate the number of sets of chunks where all cpus will be used to be processed
-    print 'The number of complete chunk sets to be processed is: {0}'.format(n_whole_chunk_sets)
+    n_complete_chunk_sets = nchunks/ncpus #calculate the number of sets of chunks where all cpus will be used to be processed
+    print 'The number of complete chunk sets to be processed is: {0}'.format(n_complete_chunk_sets)
 
     n_partial_chunk_set = nchunks%ncpus #calculate the number of cpus which must be used to process any remaining chunks
     print 'The number of remainder subchunks to be processed is: {0}\n'.format(n_partial_chunk_set)
@@ -824,10 +824,9 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
     #print [blockstartlist[i+(0*ncpus)] for i in range(ncpus)]
 
 
-    ##PROCESS WHOLE CHUNK SETS##
-
-    for count in range(n_whole_chunk_sets): #loop over rounds of full cpu usage
-        print 'Processing complete {0}-subchunk chunk set {1}/{2}...'.format(ncpus,count+1,n_whole_chunk_sets)
+    ##PROCESS COMPLETE CHUNK SETS##
+    for count in range(n_complete_chunk_sets): #loop over rounds of full cpu usage
+        print 'Processing complete {0}-subchunk chunk set {1}/{2}...'.format(ncpus,count+1,n_complete_chunk_sets)
 
         with closing(Pool(ncpus)) as p: #invoke multiprocessing (see stackoverflow threads: "Python 3: does Pool keep the original order of data passed to map?" and: "Python Multiprocessing Lib Error (AttributeError: __exit__)"
 
@@ -876,7 +875,7 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
        
 
         ###READ INDIVIDUAL SUBCHUNKS INTO CPUS###
-        subchunks=p.map(ReadChunk, [fils[0].readBlock(blockstartlist[i + (ncpus*n_whole_chunk_sets)],blocksize) for i in range(n_partial_chunk_set)],chunksize=1)
+        subchunks=p.map(ReadChunk, [fils[0].readBlock(blockstartlist[i + (ncpus*n_complete_chunk_sets)],blocksize) for i in range(n_partial_chunk_set)],chunksize=1)
 
 
         ###OPTIONAL: RESCALING AND CLIPPING###
