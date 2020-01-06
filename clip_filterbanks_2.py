@@ -277,7 +277,7 @@ def DownSampleBits(data,clip=4):
     """
     
     data-=np.mean(data)
-    print 'ERROR CHECK: ', data,np.mean(data),np.std(data),' END ERROR CHECK'
+    #print 'ERROR CHECK: ', data,np.mean(data),np.std(data),' END ERROR CHECK'
     data/=np.std(data)
     data*=128./clip
     data+=128
@@ -500,7 +500,7 @@ def CleanChunk(data,nchans,sig=3.):
     # the sigma for median clipping is currently the same as the rescaling
     
     med,std,mask = Median_clip(timeseries,sig,max_iter=5,full_output=True,xtol=0.5) #edit: max_iter 10>5
-    print 'timeseries mean, std ', med,std
+    #print 'timeseries mean, std ', med,std
 
     #find where timeseries data lies outside of boundaries
     #boundaries are std standard deviaions away from
@@ -508,7 +508,7 @@ def CleanChunk(data,nchans,sig=3.):
     
     minval = med-(sig*std)
     maxval = med+(sig*std)
-    print 'minval, maxval ',minval,maxval
+    #print 'minval, maxval ',minval,maxval
     toclip = ((timeseries<minval)|(timeseries>maxval))
 
     #loop over data on channel by channel basis
@@ -921,25 +921,29 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
 
             ###OPTIONAL: RESCALING AND CLIPPING###
             if rficlip==True: #if rfi clipping mode is on:
-                print 'RFI clipping...'
+                print '    RFI clipping = True.'
                 #rescale all subchunks in cpus
+                print '    Rescaling subchunks...'
                 rescaled_subchunks=p.map(RescaleChunk_unwrap,([(subchunk,nchans,clipsig) for subchunk in subchunks]),chunksize=1)
                 #clean all subchunks in cpus
+                print '    Cleaning subchunks...'
                 cleaned_subchunks=p.map(CleanChunk_unwrap,([(r_subchunk,nchans,clipsig) for r_subchunk in rescaled_subchunks]),chunksize=1)
             elif rficlip==False: #else:
-                print 'Data will not be clipped.'
+                print '    RFI clipping = False. Data will not be clipped.'
                 #do not modify the subchunks
                 cleaned_subchunks = subchunks
 
 
             ###OPTIONAL: RESCALING OF DATA PRODUCT FOR STORAGE###
             if bitrate==8: #if necessary...
+                print '    Rescaling data to 8 bit...'
                 out_subchunks=p.map(DownSampleBits,[c_subchunk for c_subchunk in cleaned_subchunks],chunksize=1) #...downsample to 8-bit
             else:
                 out_subchunks=cleaned_subchunks
 
 
             ###RECAST DATA FOR OUTPUT###
+            print '    Recasting data for output....'
             recast_subchunks=p.map(RecastChunk_unwrap,([(o_subchunk,outdtype) for o_subchunk in out_subchunks]),chunksize=1)
             #reshape the data to filterbank output (low freq to high freq t1, low
             # freq to high freq t2, ....) and recast to desired bit float type
@@ -949,6 +953,7 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
 
 
         ###WRITE OUT DATA TO FILE###
+        print '    Writing subchunks...'
         for subchunk in recast_subchunks:
             sppu.File.cwrite(fh_out[0], subchunk) #write subchunk to filterbank file
 
@@ -966,25 +971,29 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
 
         ###OPTIONAL: RESCALING AND CLIPPING###
         if rficlip==True: #if rfi clipping mode is on:
-            print 'RFI clipping...'
+            print '    RFI clipping = True'
             #rescale all subchunks in cpus
+            print '    Rescaling subchunks...'
             rescaled_subchunks=p.map(RescaleChunk_unwrap,([(subchunk,nchans,clipsig) for subchunk in subchunks]),chunksize=1)
             #clean all subchunks in cpus
+            print '    Cleaning subchunks...'
             cleaned_subchunks=p.map(CleanChunk_unwrap,([(r_subchunk,nchans,clipsig) for r_subchunk in rescaled_subchunks]),chunksize=1)
         elif rficlip==False: #else:
-            print 'Data will not be clipped.'
+            print '    RFI clipping = False. Data will not be clipped.'
             #do not modify the subchunks
             cleaned_subchunks = subchunks
 
 
         ###OPTIONAL: RESCALING OF DATA PRODUCT FOR STORAGE###
         if bitrate==8: #if necessary...
+            print '    Rescaling data to 8-bit...'
             out_subchunks=p.map(DownSampleBits,[c_subchunk for c_subchunk in cleaned_subchunks],chunksize=1) #...downsample to 8-bit
         else:
             out_subchunks=cleaned_subchunks
 
 
         ###RECAST DATA FOR OUTPUT###
+        print '    Recasting data for output...'
         recast_subchunks=p.map(RecastChunk_unwrap,([(o_subchunk,outdtype) for o_subchunk in out_subchunks]),chunksize=1)
         #reshape the data to filterbank output (low freq to high freq t1, low freq to
         # high freq t2, ....) and recast to desired bit float type
@@ -994,6 +1003,7 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
 
 
         ###WRITE OUT DATA TO FILE###
+    print '    Writing subchunks...'
     for subchunk in recast_subchunks:
         sppu.File.cwrite(fh_out[0], subchunk) #write block to filterbank file
 
