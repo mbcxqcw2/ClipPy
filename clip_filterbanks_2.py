@@ -31,6 +31,7 @@ V4: 20200106  - Tidied up ClipFilFast() function.
               - Made ClipFilFast() dependent on rficlip option again.
               - Cleaned up ReadChunk() helper function.
               - Cleaned up RecastChunk() helper function.
+              - Cleaned up RescaleChunk_unwrap() helper function.
 
               
 """
@@ -686,9 +687,9 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
 
 def ReadChunk(datachunk):
     """
-    A helper function for reading chunk via multiprocessing. Exists because you can't
-    multiprocess using a function with multiple inputs in Python 2.7 very easily. See
-    stackoverflow thread: "Python multiprocessing pool.map for multiple arguments".
+    A helper function for reading data chunk via multiprocessing. Exists because you
+    can't multiprocess using a function with multiple inputs in Python 2.7 very easily.
+    See stackoverflow thread: "Python multiprocessing pool.map for multiple arguments".
 
 
     INPUTS:
@@ -731,14 +732,31 @@ def RecastChunk(datachunk,outdtype):
 
 def RescaleChunk_unwrap(args):
     """
-    helper function for rescaling chunk via multiprocessing. Exists because you can't
-    multiprocess using a function with multiple inputs very easily. See
-    stackoverflow question: Python multiprocessing pool.map for multiple arguments.
+    A helper function for rescaling data chunk via multiprocessing. Exists because
+    you can't multiprocess using a function with multiple inputs in Python 2.7 very
+    easily. See stackoverflow question: "Python multiprocessing pool.map for multiple arguments".
+
+    This function unpacks a chunk of data and information necessary for rescaling, and
+    feeds them into RescaleChunk().
+
+    INPUTS:
+
+    args : a list containing 3 arguments in the following order:
+
+           datachunk : (array-like) chunk of filterbank data read by sigpyproc's readBlock()
+           nchans    : (int) number of filterbank channels in original file
+           sig       : (float) standard deviations away from mean to clip after
+
+    RETURNS:
+
+    output of RescaleChunk()
+
     """
-    print args
+    #print args
     datachunk=args[0]
     nchans=args[1]
     sig=args[2]
+
     return RescaleChunk(datachunk,nchans,sig)
 
 def CleanChunk_unwrap(args):
