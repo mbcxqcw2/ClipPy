@@ -68,6 +68,8 @@ pav   (for plotting archive files)
 7c)   dspsr Mary_fast.fil -F 256 -L 10 -t 8 -k 'Jodrell' -b 1024 -E 0329+54.eph -A -O Mary_fastclean
 
 7d)   pav -N 1,3 -DFTp Mary*.ar --ch 2
+
 7e)   pav -N 1,3 -YFd Mary*.ar --ch 2
+
 7f)   pav -N 1,3 -GTd Mary*.ar --ch 2
 
