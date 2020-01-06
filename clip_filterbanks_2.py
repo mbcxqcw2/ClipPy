@@ -745,10 +745,6 @@ def RecastChunk_unwrap(args):
     return RecastChunk(datachunk,outdtype)
 
 
-#@contextmanager
-#def poolcontext(*args, **kwargs)
-#    yield pool
-#    pool.terminate
 
 def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=40000):
     """
