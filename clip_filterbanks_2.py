@@ -32,6 +32,7 @@ V4: 20200106  - Tidied up ClipFilFast() function.
               - Cleaned up ReadChunk() helper function.
               - Cleaned up RecastChunk() helper function.
               - Cleaned up RescaleChunk_unwrap() helper function.
+              - Cleaned up CleanChunk_unwrap() helper function.
 
               
 """
@@ -726,6 +727,7 @@ def RecastChunk(datachunk,outdtype):
     datachunk : (array-like) recast/reshaped filterbank data.
 
     """
+
     datachunk=datachunk.T.flatten().astype(dtype=outdtype)
 
     return datachunk
@@ -734,10 +736,11 @@ def RescaleChunk_unwrap(args):
     """
     A helper function for rescaling data chunk via multiprocessing. Exists because
     you can't multiprocess using a function with multiple inputs in Python 2.7 very
-    easily. See stackoverflow question: "Python multiprocessing pool.map for multiple arguments".
+    easily. See stackoverflow thread: "Python multiprocessing pool.map for multiple
+    arguments".
 
     This function unpacks a chunk of data and information necessary for rescaling, and
-    feeds them into RescaleChunk().
+    passes them into RescaleChunk().
 
     INPUTS:
 
@@ -752,7 +755,7 @@ def RescaleChunk_unwrap(args):
     output of RescaleChunk()
 
     """
-    #print args
+
     datachunk=args[0]
     nchans=args[1]
     sig=args[2]
@@ -761,14 +764,34 @@ def RescaleChunk_unwrap(args):
 
 def CleanChunk_unwrap(args):
     """
-    helper function for cleaning chunk via multiprocessing. Exists because you can't
-    multiprocess using a function with multiple inputs very easily. See
-    stackoverflow question: Python multiprocessing pool.map for multiple arguments.
+    A helper function for cleaning data chunk via multiprocessing. Exists because you
+    can't multiprocess using a function with multiple inputs in Python 2.7 very easily.
+    See stackoverflow thread: "Python multiprocessing pool.map for multiple arguments".
+
+    This function unpacks a chunk of data and information necessary for cleaning, and
+    passes them into CleanChunk().
+
+    INPUTS:
+
+    args : a list containing 3 arguments in the following order:
+
+           rescaledchunk : (array-like) filterbank data chunk read in by sigpyproc's
+                           readBlock() and rescaled using RescaleChunk().
+           nchans        : (int) number of filterbank channels in original file.
+           sig           : (float) standard deviations away from mean to clip after.
+
+    RETURNS:
+
+    output of CleanChunk()
+
+
     """
-    print args
+
+    #print args
     rescaledchunk=args[0]
     nchans=args[1]
     sig=args[2]
+
     return CleanChunk(rescaledchunk,nchans,sig)
 
 def RecastChunk_unwrap(args):
