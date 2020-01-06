@@ -766,9 +766,9 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
     fils=[]
     for fil in fil_names:
         fils.append(fr(fil)) #store pointers to filterbank file
-    print 'Calculating start mjd and samples to read and skip\n' #note, nskips should be [0] and 
-                                                                 #outsamps should be the number of timesamples in the filterbank file
-                                                                 #as there is only one input.
+    print 'Calculating start mjd and samples to read and skip\n'
+    #note, nskips should be [0] and outsamps should be the number of 
+    # timesamples in the filterbank file as there is only one input.
     outsamps,nskips,startTime,nchans = CombineFilUtils_FBoverlap(fils)
     nskips=np.zeros_like(nskips)
     print '    ...samples to skip (should be [0]): {0}'.format(nskips)
