@@ -8,8 +8,6 @@ All code was developed for e-MERLIN's LOFT-e observing system.
 
 Code was developed by Charles Walker (walker.mbcxqcw2@gmail.com). Median clipping algorithm was developed by Rene Breton. Code to initialise a new filterbank file uses the read_header() function developed by Scott Ransom for PRESTO: https://github.com/scottransom/presto/blob/4959ffeac8d369d8883987287179297f93aea773/python/presto/filterbank.py
 
-Please cite accordingly. **(Note to Charlie: Add to ASCL?)**
-
 The RFI clipping algorithm is described in detail in: Charles Walker's thesis: https://www.research.manchester.ac.uk/portal/en/theses/localising-fast-transients(d2847c6c-1b0f-43d9-9155-f8dccb432cb9).html
 
 **(Note to charlie: add this to arXiv!)**
@@ -19,6 +17,8 @@ The data file "Cm1670.File1.8bit.fil" referred to in this README is an observati
 The ephemeris used for analysing this pulsar is taken from the ATNF pulsar catalog
 Manchester, R. N., Hobbs, G.B., Teoh, A. & Hobbs, M., AJ, 129, 1993-2006 (2005)
 http://www.atnf.csiro.au/research/pulsar/psrcat 
+
+Please cite accordingly. **(Note to Charlie: Add to ASCL?)**
 
 
 # PYTHON REQUIREMENTS
