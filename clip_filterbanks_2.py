@@ -3,20 +3,27 @@
 """
 clip_filterbanks_2.py
 
-code to clip filterbank files based on data location directory, mask location, and file extension. Based on incoherent beam functions
-in Incoherent_7.py (/share/nas1/LOFT-e/software/incoherent_beam_pipeline)
+code to clip filterbank files based on data location directory, mask location, and file extension.
+Based on incoherent beam functions in Incoherent_7.py (/share/nas1/LOFT-e/software/incoherent_beam_pipeline).
 
 @author: cwalker (walker.mbcxqcw2@gmail.com)
 
 V1: 20180802
-V2: 20180803  - Amended following experiments in /share/nas1/LOFT-e/experiments/02-08-18_rfi_mitigation_test_BWS.
-              - Updated Median_clip() to use np.ma.median, allowing the median of masked arrays to be calculated correctly
-              - Updated RFIclip() to not divide channels by zero if the standard deviation of the channel is zero (which follows through with nan errors)
-              -commented out warning when replacing a saturated channel (10/09/2018)
-              -this is because when running on filmerged filterbanks you get loads of printouts. (lines 467 and 506)
+
+V2: 20180803  - Amended following experiments in:
+               /share/nas1/LOFT-e/experiments/02-08-18_rfi_mitigation_test_BWS.
+              - Updated Median_clip() to use np.ma.median, allowing the median of
+                masked arrays to be calculated correctly
+              - Updated RFIclip() to not divide channels by zero if the standard
+                deviation of the channel is zero (which follows through with nan errors)
+              - Commented out warning when replacing a saturated channel (10/09/2018).
+                this is because when running on filmerged filterbanks you get loads of
+                printouts. (lines 467 and 506)
+
 V3: 20191219  - Fixed ClipFil() description.
               - Made toload_samps an input variable in ClipFil().
-              - Fixed hardcoded RFIClip()instances of drawing numbers from Gaussians with means of of X/256 to X/np.float(nchans).
+              - Fixed hardcoded RFIClip()instances of drawing numbers
+                from Gaussians with means of of X/256 to X/np.float(nchans).
               - Functionised rescaling portion of RFIClip() as RescaleChunk().
               - Functionised cleaning portion of RFIClip() as CleanChunk().
               - Removed superflous loop over # telescopes in ClipFil().
@@ -37,7 +44,13 @@ V4: 20200106  - Tidied up ClipFilFast() function.
               - Removed uneccesary import of itertools.product
               - Amended print statements.
 
-V5: 20200107  - Amended ClipFil() to process remainder timesamples rather than skipping them. Note: this has since been commented out, because while it works correctly, it rather drastically lowers the signal to noise of the pulsar in the test observation. More tests on more RFI are neeeded to determine whether it is worth keeping the remaining portion. It may be that proper statistixcs cannot be calculated on it as it is so small.
+V5: 20200107  - Amended ClipFil() to process remainder timesamples rather
+                than skipping them. Note: this has since been commented out, 
+                because while it works correctly, it rather drastically lowers
+                the signal to noise of the pulsar in the test observation.
+                More tests on more RFI are neeeded to determine whether it is
+                worth keeping the remaining portion. It may be that proper
+                statistics cannot be calculated on it as it is so small.
 
               
 """
@@ -236,7 +249,10 @@ def read_header(filename, verbose=False):
             header: A dictionary of header paramters.
             header_size: The size of the header in bytes.
 
-    Note: this was borrowed from Scott Ransom's presto github https://github.com/scottransom/presto/blob/master/lib/python/filterbank.py
+    Note: this was borrowed from Scott Ransom's presto github:
+
+    https://github.com/scottransom/presto/blob/master/lib/python/filterbank.py
+
     Note Note: this is a direct copy of the read_header in downsamp_utils.
     I should import it really...
 
