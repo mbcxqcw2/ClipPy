@@ -53,6 +53,7 @@ V5: 20200107  - Amended ClipFil() to process remainder timesamples rather
                 statistics cannot be calculated on it as it is so small.
     20200108  - Put ClipFil() remainder timesample code in optional loop
                 triggered by "proc_remainder" variable to allow testing.
+              - Added proc_remainder option to ClipFilFast() for testing.
 
               
 """
@@ -598,17 +599,19 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
 
     FUNCTION INPUTS:
 
-    in_fil         : (str) input filterbank to clip (must be directory location and file name)
+    in_fil         : (str) input filterbank to clip (must be directory location and
+                     file name)
     outname        : (str) output name for clipped filterbank
     outloc         : (str) output folder for clipped filterbank
-    bitswap        : (True/False boolean) if True, 8-bit input will be written out as 32-bit
-                   if False, 8-bit input will be written out as 8-bit
-                   and vice-versa
+    bitswap        : (True/False boolean) if True, 8-bit input will be written out
+                     as 32-bit
+                     if False, 8-bit input will be written out as 8-bit
+                     and vice-versa
     rficlip        : (True/False boolean) if True, rfi sigma clipping will be applied via
-                   timeseries data
+                     timeseries data
     clipsig        : (float) the clipping sigma, if rficlip==True
     toload_samps   : (int) the number of timesamples (spectra) to load at once while
-                   clipping.
+                     clipping.
     proc_remainder : (boolean) option to process any remaining timesamples which do not
                      fit into an integer number of toload_samps. Default is FALSE until
                      testing on its effect on S/N is complete.
@@ -903,7 +906,7 @@ def RecastChunk_unwrap(args):
 
 
 
-def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=40000):
+def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=40000,proc_remainder=False):
     """
     Same as ClipFil but parallelised for speed. See ClipFil().
 
@@ -1079,13 +1082,57 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
         p.terminate()
 
 
-        ###WRITE OUT DATA TO FILE###
+    ###WRITE OUT DATA TO FILE###
     print '    Writing subchunks...'
     for subchunk in recast_subchunks:
         sppu.File.cwrite(fh_out[0], subchunk) #write block to filterbank file
 
 
 
+    ##PROCESS REMAINING SAMPLES##
+    ### NOTE: this defaults to false pending further investigation (see version notes V5) ###
+    if proc_remainder==True:
+        print 'Remaining samples will be clipped. Clipping remaining {0} samples...'.format(remainder)
+    
+        #initialise chunk load
+        data = np.zeros((nchans,remainder,len(fils)))
+        skip = int(round(nskips[0])) #should always be zero
+        blockstart = int(skip+outsamps-remainder+1)
+        #NOTE: skip should always be zero. This is a vestigial variable from
+        # incoherent beamforming code. Outsamps is the number of time samples
+        # in the filterbank file. Python is zero-indexed, hence you must
+        # start loading from the sample (outsamps - remainder + 1).
+    
+        #read remainder
+        print '    Reading remainder...'
+        remainder_subchunk = fils[0].readBlock(blockstart,remainder)
+    
+        #optional: rescaling and clipping
+        if rficlip==True: #if rfi clipping mode is on:
+            print '    Rescaling remainder...'
+            remainder_subchunk = RescaleChunk(remainder_subchunk,nchans,clipsig)
+            print '    Cleaning remainder...'
+            remainder_subchunk = CleanChunk(remainder_subchunk,nchans,clipsig)
+    
+        #store clean, rescaled chunk in new array
+        data[:,:,0]=remainder_subchunk
+        data=data.sum(axis=2)
+    
+        #optional: rescale data product for storage
+        if bitrate==8:
+            print '    Rescaling remainder to 8-bit...'
+            data=DownSampleBits(data)
+    
+        #write clean data to file
+        data = data.T.flatten().astype(dtype=outdtype)
+        #reshape the data to filterbank output (low freq to high freq t1,
+        # low freq to high freq t2, ....) and recast to desired type
+    
+        sppu.File.cwrite(fh_out[0],data) #write remainder to filterbank file
+
+
+
+    print 'ClipFilFast() process complete.'
     ##END FUNCTION##
 
 
