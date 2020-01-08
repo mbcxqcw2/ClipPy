@@ -613,8 +613,9 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
     toload_samps   : (int) the number of timesamples (spectra) to load at once while
                      clipping.
     proc_remainder : (boolean) option to process any remaining timesamples which do not
-                     fit into an integer number of toload_samps. Default is FALSE until
-                     testing on its effect on S/N is complete.
+                     fit into an integer number of toload_samps. If "False", these
+                     timesamples are discarded. Default is "False" until
+                     testing of its effect on S/N is complete.
 
 
 
