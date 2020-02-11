@@ -17,6 +17,8 @@ bitswap        = False # we wish to keep the output data bit rate the same as th
 
 sigclip        = 3.    # the clipping threshold to use when clipping RFI
 toload_samps   = 40000 # the number of samples to load at once while clipping
+n_cores        = 13    # the number of cores ClipFilFast will use in parallel
+                       # on your machine
 
 proc_remainder = False  # option to process remainder samples which do not fit into
                         # an integer number of toload_samps. If "True", may decrease
@@ -26,4 +28,4 @@ proc_remainder = False  # option to process remainder samples which do not fit i
 
 #Perform RFI clipping
 ClipFil(filfile_toclip,outfile_name,out_path+'/',bitswap,True,sigclip,toload_samps,proc_remainder)
-ClipFilFast(filfile_toclip,outfile_fast_name,out_path+'/',bitswap,True,sigclip,toload_samps,proc_remainder)
+ClipFilFast(filfile_toclip,outfile_fast_name,out_path+'/',bitswap,True,sigclip,toload_samps,n_cores,proc_remainder)

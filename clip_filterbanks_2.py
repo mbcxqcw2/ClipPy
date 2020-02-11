@@ -54,6 +54,8 @@ V5: 20200107  - Amended ClipFil() to process remainder timesamples rather
     20200108  - Put ClipFil() remainder timesample code in optional loop
                 triggered by "proc_remainder" variable to allow testing.
               - Added proc_remainder option to ClipFilFast() for testing.
+    20200211  - Stopped ClipFilFast() from defaulting to using all cores on
+                machine
 
               
 """
@@ -907,9 +909,17 @@ def RecastChunk_unwrap(args):
 
 
 
-def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=40000,proc_remainder=False):
+def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=40000,n_cores=2,proc_remainder=False):
     """
     Same as ClipFil but parallelised for speed. See ClipFil().
+
+    Extra inputs:
+
+    n_cores : [int] number of cores to use in parallel.
+                    default is 2. If changed to a number greater than the total
+                    number of available cores on the machine, the number used 
+                    will default to the maximum number of cores on the machine.
+                    Using all cores may be unadvisable, so decide this value wisely.
 
 
     """
@@ -962,6 +972,15 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
     #INITIALISE PARALELLISATION##
     ncpus = m.cpu_count() #count available cpus
     print 'Maximum number of cpus which may be used at once is: {0}'.format(ncpus)
+
+    #decide number of cores to use
+    if n_cores > ncpus: #case: the number of requested cores is greater than the numbeer of available cores
+        print "WARNING! Number of requested cores ({0}) is too large! Will use maximum available.".format(n_cores)
+        ncpus = ncpus
+    elif n_cores <= ncpus: # case: the number of requested cores is less than/equal to the number of available cores
+        ncpus = n_cores 
+
+    print 'The number of cpus which will be used at once is: {0}'.format(ncpus)
     print 'The total number of subchunks to process is: {0}'.format(nchunks)
     print 'The number of subchunks to be processed in one chunk set is: {0}'.format(ncpus)
 
