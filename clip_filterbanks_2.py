@@ -57,6 +57,10 @@ V5: 20200107  - Amended ClipFil() to process remainder timesamples rather
     20200211  - Stopped ClipFilFast() from defaulting to using all cores on
                 machine
 
+v6: 20200429  - Amended print statements to follow Python 3 conventions.
+              - Amended presto sigproc import method to match most recent 
+                (Python-3 compatable) version.
+
               
 """
 
@@ -64,7 +68,7 @@ from sigpyproc.Readers import FilReader as fr
 from astropy.time import Time
 from astropy import units as u
 import numpy as np
-import sigproc
+from presto import sigproc
 import sigpyproc.Header as spph
 import sigpyproc.Utils as sppu
 from matplotlib import pyplot as plt
