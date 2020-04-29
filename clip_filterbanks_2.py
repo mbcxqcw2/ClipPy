@@ -57,9 +57,10 @@ V5: 20200107  - Amended ClipFil() to process remainder timesamples rather
     20200211  - Stopped ClipFilFast() from defaulting to using all cores on
                 machine
 
-v6: 20200429  - Amended print statements to follow Python 3 conventions.
+V6: 20200429  - Amended print statements to follow Python 3 conventions.
               - Amended presto sigproc import method to match most recent 
                 (Python-3 compatable) version.
+              - Modified  ClipFil() to output a standard deviation log file.
 
               
 """
@@ -674,6 +675,10 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
 
 
     ##PERFORM RFI MITIGATION AND WRITE TO FILE##
+
+    stdlog = open("stdlog.txt","w") #open standard deviation log file
+    stdlog.write("Original number of time samples: {0} Processing chunk size (timesamps): {1} Number of chunks: {2} Process remainder: {3} Clipping sigma: {4}".format(outsamps,toload_samps,nchunks,proc_remainder,clipsig))
+
     print 'beginning clipping\n'
    
     nfils = len(fils) #number of filterbank files to clip. Should always be 1
@@ -764,7 +769,7 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
         sppu.File.cwrite(fh_out[0],data) #write remainder to filterbank file
 
 
-
+    stdlog.close()
     print 'ClipFil() process complete.'
     ##END FUNCTION##
 
