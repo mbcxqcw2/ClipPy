@@ -61,6 +61,10 @@ V6: 20200429  - Amended print statements to follow Python 3 conventions.
               - Amended presto sigproc import method to match most recent 
                 (Python-3 compatable) version.
               - Modified  ClipFil() to output a standard deviation log file.
+              - Modified RescaleChunk() to output a list of standard deviations
+                calculated for the channels in its input data prior to rescaling.
+              - Amended instances calling RescaleChunk() to handle extra output.
+              - Modified ClipFil() to write standard deviations to log file.
 
               
 """
@@ -472,13 +476,22 @@ def RescaleChunk(data,nchans,sig=3.):
     RETURNS:
 
     rescaled_data : (array-like) rescaled data chunk
+    std_list : (list) list of the standard deviations calculated for and used to
+    rescale each channel in the data chunk by the median clipping algorithm. If
+    data was readin using sigpyproc.readBlock() std list will follow the same convention
+    lowest frequency channel -> highest frequency channel.
+
     """
+
+    std_list = [] #initialise list to hold channel standard deviations
 
     for j in range(nchans):
         #data
         channel = data[j]
         #get mean, standard deviation
         mean,std,mask = Median_clip(channel,sig,max_iter=5,full_output=True,xtol=0.5)#edit: max_iter 10>5
+        #record channel standard deviation
+        std_list.append(std)
         if std==0.0:
             #print 'WARNING: Channel', j, 'mean, std ',mean,std
             channel-=mean
@@ -489,7 +502,7 @@ def RescaleChunk(data,nchans,sig=3.):
 
     rescaled_data = data
 
-    return rescaled_data
+    return rescaled_data,std_list
 
 
 def CleanChunk(data,nchans,sig=3.):
@@ -581,6 +594,16 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
     Mitigates timeseries RFI in an input filterbank file.
     Outputs second, clipped file with chosen name.
     Mitigates RFI on a chunk-by-chunk basis using a chosen chunksize.
+
+    Also outputs the log file "stdlog.txt" which returns the standard
+    deviations calculated for each frequency channel and data chunk
+    when rescaling original data. Structure of stdlog.txt is:
+
+    Line 1: header
+    Line 2: chunk 1: standard deviation (lowest frequency) -> standard deviation (highest frequency)
+    Line 3: chunk 2: standard deviation (lowest frequency) -> standard deviation (highest frequency)
+    ...
+    etc to final chunk.
 
 
     CHUNKWISE RFI MITIGATION ALGORITHM:
@@ -677,7 +700,7 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
     ##PERFORM RFI MITIGATION AND WRITE TO FILE##
 
     stdlog = open("stdlog.txt","w") #open standard deviation log file
-    stdlog.write("Original number of time samples: {0} Processing chunk size (timesamps): {1} Number of chunks: {2} Process remainder: {3} Clipping sigma: {4}".format(outsamps,toload_samps,nchunks,proc_remainder,clipsig))
+    stdlog.write("Original number of time samples: {0} Number of frequency channels: {1} Processing chunk size (timesamps): {2} Number of chunks: {3} Process remainder: {4} Clipping sigma: {5} File structure: rows=chunks, columns=frequency channel standard deviations (low freq->high freq)\n".format(outsamps,nchans,toload_samps,nchunks,proc_remainder,clipsig))
 
     print 'beginning clipping\n'
    
@@ -704,7 +727,8 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
             print 'RFI clipping...'
 
             ###RESCALE CHUNK###
-            chunk=RescaleChunk(chunk,nchans,clipsig)
+            chunk,stdlist=RescaleChunk(chunk,nchans,clipsig)
+            stdlog.write(" ".join(np.array(stdlist,dtype=str))+"\n")
 
             ###CLIP CHUNK###
             chunk=CleanChunk(chunk,nchans,clipsig)
@@ -748,7 +772,8 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
         #optional: rescaling and clipping
         if rficlip==True: #if rfi clipping mode is on:
             print '    Rescaling remainder...'
-            chunk = RescaleChunk(chunk,nchans,clipsig)
+            chunk,stdlist = RescaleChunk(chunk,nchans,clipsig)
+            stdlog.write(" ".join(np.array(stdlist,dtype=str))+"\n")
             print '    Cleaning remainder...'
             chunk = CleanChunk(chunk,nchans,clipsig)
     
@@ -845,7 +870,7 @@ def RescaleChunk_unwrap(args):
 
     RETURNS:
 
-    output of RescaleChunk()
+    output of RescaleChunk() (Currently only the data and not the list of standard deviations)
 
     """
 
@@ -853,7 +878,7 @@ def RescaleChunk_unwrap(args):
     nchans=args[1]
     sig=args[2]
 
-    return RescaleChunk(datachunk,nchans,sig)
+    return RescaleChunk(datachunk,nchans,sig)[0]
 
 def CleanChunk_unwrap(args):
     """
@@ -1139,7 +1164,7 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
         #optional: rescaling and clipping
         if rficlip==True: #if rfi clipping mode is on:
             print '    Rescaling remainder...'
-            remainder_subchunk = RescaleChunk(remainder_subchunk,nchans,clipsig)
+            remainder_subchunk,stdlist = RescaleChunk(remainder_subchunk,nchans,clipsig)
             print '    Cleaning remainder...'
             remainder_subchunk = CleanChunk(remainder_subchunk,nchans,clipsig)
     
