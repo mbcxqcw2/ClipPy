@@ -37,6 +37,8 @@ astropy
 
 sigpyproc
 
+presto (version 3.0+)
+
 # EXTRA REQUIREMENTS
 
 dspsr (for folding pulsar data)
