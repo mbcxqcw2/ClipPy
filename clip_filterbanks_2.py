@@ -700,7 +700,7 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
     ##PERFORM RFI MITIGATION AND WRITE TO FILE##
 
     #open standard deviation log file and write header
-    stdlog = open("stdlog.txt","w")
+    stdlog = open("{0}/stdlog.txt".format(outloc),"w")
     stdlog.write("Original number of time samples: {0} Number of frequency channels: {1} Processing chunk size (timesamps): {2} Number of chunks: {3} Process remainder: {4} Clipping sigma: {5} File structure: rows=chunks, columns=frequency channel standard deviations (low freq->high freq)\n".format(outsamps,nchans,toload_samps,nchunks,proc_remainder,clipsig))
 
     #begin clipping
