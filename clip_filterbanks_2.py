@@ -272,16 +272,16 @@ def read_header(filename, verbose=False):
 
     """
     header = {}
-    print 'to read: '+filename
+    print('to read: '+filename)
     filfile = open(filename, 'rb')
     filfile.seek(0)
     paramname = ""
     while (paramname != 'HEADER_END'):
         if verbose:
-            print "File location: %d" % filfile.tell()
+            print("File location: %d" % filfile.tell())
         paramname, val = sigproc.read_hdr_val(filfile, stdout=verbose)
         if verbose:
-            print "Read param %s (value: %s)" % (paramname, val)
+            print("Read param %s (value: %s)" % (paramname, val))
         if paramname not in ["HEADER_START", "HEADER_END"]:
             header[paramname] = val
     header_size = filfile.tell()
@@ -653,33 +653,33 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
     
 
     ##INITIALISE INPUT FILTERBANK LOADING##
-    print 'Input file is: ',in_fil
+    print('Input file is: ',in_fil)
     fil_names=np.array([in_fil]).flatten()
-    print fil_names.shape
-    print 'loading filterbank\n'
+    print(fil_names.shape)
+    print('loading filterbank\n')
     fils=[]
     for fil in fil_names:
         fils.append(fr(fil)) #store pointers to filterbank file
-    print 'Calculating start mjd and samples to read and skip\n'
+    print('Calculating start mjd and samples to read and skip\n')
     #note, nskips should be [0] and outsamps should be the number of
     # timesamples in the filterbank file as there is only one input.
 
     outsamps,nskips,startTime,nchans = CombineFilUtils_FBoverlap(fils)
     nskips=np.zeros_like(nskips)
-    print '    ...samples to skip (should be [0]): {0}'.format(nskips)
-    print '    ...samples to read (should be fil length): {0}'.format(outsamps)
+    print('    ...samples to skip (should be [0]): {0}'.format(nskips))
+    print('    ...samples to read (should be fil length): {0}'.format(outsamps))
 
 
 
     ##INITIALISE CHUNKING INFORMATION##
-    print 'calculating data chunking information\n'
+    print('calculating data chunking information\n')
     blocksize=toload_samps
     nchunks,remainder = CombineFilUtils_FBchunking(outsamps,blocksize)
     
 
 
     ##INITIALISE THE OUTPUT FILTERBANK FILE
-    print 'initialising output filterbank\n'
+    print('initialising output filterbank\n')
     fh_out,bitrate = CombineFilUtils_InitialiseOut(fil_names,
                                                    outloc,
                                                    outname,
@@ -689,7 +689,7 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
 
 
     ##SET DATA TYPE TO WRITE OUTPUT AS##
-    print 'output files will be {0}-bit\n'.format(bitrate)
+    print('output files will be {0}-bit\n'.format(bitrate))
     if bitrate==8:
         outdtype = np.uint8
     elif bitrate==32:
@@ -704,7 +704,7 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
     stdlog.write("Original number of time samples: {0} Number of frequency channels: {1} Processing chunk size (timesamps): {2} Number of chunks: {3} Process remainder: {4} Clipping sigma: {5} File structure: rows=chunks, columns=frequency channel standard deviations (low freq->high freq)\n".format(outsamps,nchans,toload_samps,nchunks,proc_remainder,clipsig))
 
     #begin clipping
-    print 'beginning clipping\n'
+    print('beginning clipping\n')
    
     nfils = len(fils) #number of filterbank files to clip. Should always be 1
 
@@ -719,14 +719,14 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
 
         blockstart=int(skip+(c*blocksize)) #start sample of chunk to read
 
-        print 'Reading/Writing chunk {0}/{1}'.format(c,nchunks)
+        print('Reading/Writing chunk {0}/{1}'.format(c,nchunks))
 
         ###READ CHUNK###
         chunk=fils[0].readBlock(blockstart,blocksize) #read chunk
 
         ###OPTIONAL: RESCALING AND CLIPPING###
         if rficlip==True: #if rfi clipping mode is on:
-            print 'RFI clipping...'
+            print('RFI clipping...')
 
             ###RESCALE CHUNK###
             chunk,stdlist=RescaleChunk(chunk,nchans,clipsig) #rescale the chunk
@@ -756,7 +756,7 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
     ##PROCESS REMAINING SAMPLES##
     ### NOTE: this defaults to false pending further investigation (see version notes V5) ###
     if proc_remainder==True:
-        print 'Remaining samples will be clipped. Clipping remaining {0} samples...'.format(remainder)
+        print('Remaining samples will be clipped. Clipping remaining {0} samples...'.format(remainder))
     
         #initialise chunk load
         data = np.zeros((nchans,remainder,nfils))
@@ -768,15 +768,15 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
         # start loading from the sample (outsamps - remainder + 1).
     
         #read remainder
-        print '    Reading remainder...'
+        print('    Reading remainder...')
         chunk = fils[0].readBlock(blockstart,remainder)
     
         #optional: rescaling and clipping
         if rficlip==True: #if rfi clipping mode is on:
-            print '    Rescaling remainder...'
+            print('    Rescaling remainder...')
             chunk,stdlist = RescaleChunk(chunk,nchans,clipsig) #rescale the chunk
             stdlog.write(" ".join(np.array(stdlist,dtype=str))+"\n") #write standard deviations to log file
-            print '    Cleaning remainder...'
+            print('    Cleaning remainder...')
             chunk = CleanChunk(chunk,nchans,clipsig)
     
         #store clean, rescaled chunk in new array
@@ -785,7 +785,7 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
     
         #optional: rescale data product for storage
         if bitrate==8:
-            print '    Downsampling remainder...'
+            print('    Downsampling remainder...')
             data=DownSampleBits(data)
     
         #write clean data to file
@@ -797,7 +797,7 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
 
 
     stdlog.close()
-    print 'ClipFil() process complete.'
+    print('ClipFil() process complete.')
     ##END FUNCTION##
 
 
@@ -962,32 +962,32 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
     
 
     ##INITIALISE INPUT FILTERBANK LOADING##
-    print 'Input file is: ',in_fil
+    print('Input file is: ',in_fil)
     fil_names=np.array([in_fil]).flatten()
-    print fil_names.shape
-    print 'loading filterbank\n'
+    print(fil_names.shape)
+    print('loading filterbank\n')
     fils=[]
     for fil in fil_names:
         fils.append(fr(fil)) #store pointers to filterbank file
-    print 'Calculating start mjd and samples to read and skip\n'
+    print('Calculating start mjd and samples to read and skip\n')
     #note, nskips should be [0] and outsamps should be the number of 
     # timesamples in the filterbank file as there is only one input.
     outsamps,nskips,startTime,nchans = CombineFilUtils_FBoverlap(fils)
     nskips=np.zeros_like(nskips)
-    print '    ...samples to skip (should be [0]): {0}'.format(nskips)
-    print '    ...samples to read (should be fil length): {0}'.format(outsamps)
+    print('    ...samples to skip (should be [0]): {0}'.format(nskips))
+    print('    ...samples to read (should be fil length): {0}'.format(outsamps))
 
 
 
     ##INITIALISE CHUNKING INFORMATION##
-    print 'calculating data chunking information\n'
+    print('calculating data chunking information\n')
     blocksize=toload_samps
     nchunks,remainder = CombineFilUtils_FBchunking(outsamps,blocksize)
     
 
 
     ##INITIALISE THE OUTPUT FILTERBANK FILE
-    print 'initialising output filterbank\n'
+    print('initialising output filterbank\n')
     fh_out,bitrate = CombineFilUtils_InitialiseOut(fil_names,
                                                    outloc,
                                                    outname,
@@ -997,7 +997,7 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
 
 
     ##SET DATA TYPE TO WRITE OUTPUT AS##
-    print 'output files will be {0}-bit\n'.format(bitrate)
+    print('output files will be {0}-bit\n'.format(bitrate))
     if bitrate==8:
         outdtype = np.uint8
     elif bitrate==32:
@@ -1007,38 +1007,38 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
 
     #INITIALISE PARALELLISATION##
     ncpus = m.cpu_count() #count available cpus
-    print 'Maximum number of cpus which may be used at once is: {0}'.format(ncpus)
+    print('Maximum number of cpus which may be used at once is: {0}'.format(ncpus))
 
     #decide number of cores to use
     if n_cores > ncpus: #case: the number of requested cores is greater than the numbeer of available cores
-        print "WARNING! Number of requested cores ({0}) is too large! Will use maximum available.".format(n_cores)
+        print("WARNING! Number of requested cores ({0}) is too large! Will use maximum available.".format(n_cores))
         ncpus = ncpus
     elif n_cores <= ncpus: # case: the number of requested cores is less than/equal to the number of available cores
         ncpus = n_cores 
 
-    print 'The number of cpus which will be used at once is: {0}'.format(ncpus)
-    print 'The total number of subchunks to process is: {0}'.format(nchunks)
-    print 'The number of subchunks to be processed in one chunk set is: {0}'.format(ncpus)
+    print('The number of cpus which will be used at once is: {0}'.format(ncpus))
+    print('The total number of subchunks to process is: {0}'.format(nchunks))
+    print('The number of subchunks to be processed in one chunk set is: {0}'.format(ncpus))
 
     n_complete_chunk_sets = nchunks/ncpus #calculate the number of sets of chunks where all cpus will be used to be processed
-    print 'The number of complete chunk sets to be processed is: {0}'.format(n_complete_chunk_sets)
+    print('The number of complete chunk sets to be processed is: {0}'.format(n_complete_chunk_sets))
 
     n_partial_chunk_set = nchunks%ncpus #calculate the number of cpus which must be used to process any remaining chunks
-    print 'The number of remainder subchunks to be processed is: {0}\n'.format(n_partial_chunk_set)
+    print('The number of remainder subchunks to be processed is: {0}\n'.format(n_partial_chunk_set))
 
     subchunklist = np.arange(nchunks) #list of subchunks to process
-    print 'The subchunks to be processed are: {0}'.format(subchunklist)
+    print('The subchunks to be processed are: {0}'.format(subchunklist))
 
     skip=int(round(nskips[0])) #number of blocks to skip reading at beginning of file (=0)
     blockstartlist = [int(skip+(c*blocksize)) for c in subchunklist] #list of chunk start samples to read
-    print 'The start samples to be read for each subchunk are: {0}\n'.format(blockstartlist)
+    print('The start samples to be read for each subchunk are: {0}\n'.format(blockstartlist))
 
     #print [blockstartlist[i+(0*ncpus)] for i in range(ncpus)]
 
 
     ##PROCESS COMPLETE CHUNK SETS##
     for count in range(n_complete_chunk_sets): #loop over rounds of full cpu usage
-        print 'Processing complete {0}-subchunk chunk set {1}/{2}...'.format(ncpus,count+1,n_complete_chunk_sets)
+        print('Processing complete {0}-subchunk chunk set {1}/{2}...'.format(ncpus,count+1,n_complete_chunk_sets))
 
         with closing(Pool(ncpus)) as p:
         #invoke multiprocessing (see stackoverflow threads: "Python 3: does
@@ -1057,29 +1057,29 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
 
             ###OPTIONAL: RESCALING AND CLIPPING###
             if rficlip==True: #if rfi clipping mode is on:
-                print '    RFI clipping = True.'
+                print('    RFI clipping = True.')
                 #rescale all subchunks in cpus
-                print '    Rescaling subchunks...'
+                print('    Rescaling subchunks...')
                 rescaled_subchunks=p.map(RescaleChunk_unwrap,([(subchunk,nchans,clipsig) for subchunk in subchunks]),chunksize=1)
                 #clean all subchunks in cpus
-                print '    Cleaning subchunks...'
+                print('    Cleaning subchunks...')
                 cleaned_subchunks=p.map(CleanChunk_unwrap,([(r_subchunk,nchans,clipsig) for r_subchunk in rescaled_subchunks]),chunksize=1)
             elif rficlip==False: #else:
-                print '    RFI clipping = False. Data will not be clipped.'
+                print('    RFI clipping = False. Data will not be clipped.')
                 #do not modify the subchunks
                 cleaned_subchunks = subchunks
 
 
             ###OPTIONAL: RESCALING OF DATA PRODUCT FOR STORAGE###
             if bitrate==8: #if necessary...
-                print '    Rescaling data to 8 bit...'
+                print('    Rescaling data to 8 bit...')
                 out_subchunks=p.map(DownSampleBits,[c_subchunk for c_subchunk in cleaned_subchunks],chunksize=1) #...downsample to 8-bit
             else:
                 out_subchunks=cleaned_subchunks
 
 
             ###RECAST DATA FOR OUTPUT###
-            print '    Recasting data for output....'
+            print('    Recasting data for output....')
             recast_subchunks=p.map(RecastChunk_unwrap,([(o_subchunk,outdtype) for o_subchunk in out_subchunks]),chunksize=1)
             #reshape the data to filterbank output (low freq to high freq t1, low
             # freq to high freq t2, ....) and recast to desired bit float type
@@ -1089,13 +1089,13 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
 
 
         ###WRITE OUT DATA TO FILE###
-        print '    Writing subchunks...'
+        print('    Writing subchunks...')
         for subchunk in recast_subchunks:
             sppu.File.cwrite(fh_out[0], subchunk) #write subchunk to filterbank file
 
 
     ##PROCESS PARTIAL REMAINING SUBCHUNKS##
-    print 'Processing remaining {0} subchunks...'.format(n_partial_chunk_set)
+    print('Processing remaining {0} subchunks...'.format(n_partial_chunk_set))
 
 
     with closing(Pool(n_partial_chunk_set)) as p: #invoke multiprocessing
@@ -1107,29 +1107,29 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
 
         ###OPTIONAL: RESCALING AND CLIPPING###
         if rficlip==True: #if rfi clipping mode is on:
-            print '    RFI clipping = True'
+            print('    RFI clipping = True')
             #rescale all subchunks in cpus
-            print '    Rescaling subchunks...'
+            print('    Rescaling subchunks...')
             rescaled_subchunks=p.map(RescaleChunk_unwrap,([(subchunk,nchans,clipsig) for subchunk in subchunks]),chunksize=1)
             #clean all subchunks in cpus
-            print '    Cleaning subchunks...'
+            print('    Cleaning subchunks...')
             cleaned_subchunks=p.map(CleanChunk_unwrap,([(r_subchunk,nchans,clipsig) for r_subchunk in rescaled_subchunks]),chunksize=1)
         elif rficlip==False: #else:
-            print '    RFI clipping = False. Data will not be clipped.'
+            print('    RFI clipping = False. Data will not be clipped.')
             #do not modify the subchunks
             cleaned_subchunks = subchunks
 
 
         ###OPTIONAL: RESCALING OF DATA PRODUCT FOR STORAGE###
         if bitrate==8: #if necessary...
-            print '    Rescaling data to 8-bit...'
+            print('    Rescaling data to 8-bit...')
             out_subchunks=p.map(DownSampleBits,[c_subchunk for c_subchunk in cleaned_subchunks],chunksize=1) #...downsample to 8-bit
         else:
             out_subchunks=cleaned_subchunks
 
 
         ###RECAST DATA FOR OUTPUT###
-        print '    Recasting data for output...'
+        print('    Recasting data for output...')
         recast_subchunks=p.map(RecastChunk_unwrap,([(o_subchunk,outdtype) for o_subchunk in out_subchunks]),chunksize=1)
         #reshape the data to filterbank output (low freq to high freq t1, low freq to
         # high freq t2, ....) and recast to desired bit float type
@@ -1139,7 +1139,7 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
 
 
     ###WRITE OUT DATA TO FILE###
-    print '    Writing subchunks...'
+    print('    Writing subchunks...')
     for subchunk in recast_subchunks:
         sppu.File.cwrite(fh_out[0], subchunk) #write block to filterbank file
 
@@ -1148,7 +1148,7 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
     ##PROCESS REMAINING SAMPLES##
     ### NOTE: this defaults to false pending further investigation (see version notes V5) ###
     if proc_remainder==True:
-        print 'Remaining samples will be clipped. Clipping remaining {0} samples...'.format(remainder)
+        print('Remaining samples will be clipped. Clipping remaining {0} samples...'.format(remainder))
     
         #initialise chunk load
         data = np.zeros((nchans,remainder,len(fils)))
@@ -1160,14 +1160,14 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
         # start loading from the sample (outsamps - remainder + 1).
     
         #read remainder
-        print '    Reading remainder...'
+        print('    Reading remainder...')
         remainder_subchunk = fils[0].readBlock(blockstart,remainder)
     
         #optional: rescaling and clipping
         if rficlip==True: #if rfi clipping mode is on:
-            print '    Rescaling remainder...'
+            print('    Rescaling remainder...')
             remainder_subchunk,stdlist = RescaleChunk(remainder_subchunk,nchans,clipsig)
-            print '    Cleaning remainder...'
+            print('    Cleaning remainder...')
             remainder_subchunk = CleanChunk(remainder_subchunk,nchans,clipsig)
     
         #store clean, rescaled chunk in new array
@@ -1176,7 +1176,7 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
     
         #optional: rescale data product for storage
         if bitrate==8:
-            print '    Rescaling remainder to 8-bit...'
+            print('    Rescaling remainder to 8-bit...')
             data=DownSampleBits(data)
     
         #write clean data to file
@@ -1188,7 +1188,7 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
 
 
 
-    print 'ClipFilFast() process complete.'
+    print('ClipFilFast() process complete.')
     ##END FUNCTION##
 
 
