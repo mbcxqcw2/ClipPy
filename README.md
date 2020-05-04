@@ -1,8 +1,10 @@
 # PREAMBLE
 
-This script performs time-domain RFI clipping on 8-bit or 32-bit filterbank files.
+The script 'Mary_Clipping_Script.py' illustrates time-domain RFI clipping on 8-bit or 32-bit filterbank files. The RFI clipping algorithms used are called from the included 'clip_filterbanks_2.py' library.
 
-RFI clipping is run twice: once with the single-CPU ClipFil() function, and then again with its multiprocessing ClipFilFast() version.
+By default, 'Mary_Clipping_Script.py' processes data twice: once with a single-CPU ClipFil() function, and then again with a multiprocessing ClipFilFast() version. Both functions produce comparable results.
+
+Note: ClipFil() additionally outputs logs of the standard deviations measured and used to rescale the input data file in the desired output directory as 'stdlog.txt'. See ClipFil() usage for a detailed description. ClipFilFast() does not yet have this capability
 
 All code was developed for e-MERLIN's LOFT-e observing system.
 
