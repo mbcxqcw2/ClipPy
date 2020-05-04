@@ -699,9 +699,11 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
 
     ##PERFORM RFI MITIGATION AND WRITE TO FILE##
 
-    stdlog = open("stdlog.txt","w") #open standard deviation log file
+    #open standard deviation log file and write header
+    stdlog = open("stdlog.txt","w")
     stdlog.write("Original number of time samples: {0} Number of frequency channels: {1} Processing chunk size (timesamps): {2} Number of chunks: {3} Process remainder: {4} Clipping sigma: {5} File structure: rows=chunks, columns=frequency channel standard deviations (low freq->high freq)\n".format(outsamps,nchans,toload_samps,nchunks,proc_remainder,clipsig))
 
+    #begin clipping
     print 'beginning clipping\n'
    
     nfils = len(fils) #number of filterbank files to clip. Should always be 1
@@ -727,8 +729,8 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
             print 'RFI clipping...'
 
             ###RESCALE CHUNK###
-            chunk,stdlist=RescaleChunk(chunk,nchans,clipsig)
-            stdlog.write(" ".join(np.array(stdlist,dtype=str))+"\n")
+            chunk,stdlist=RescaleChunk(chunk,nchans,clipsig) #rescale the chunk
+            stdlog.write(" ".join(np.array(stdlist,dtype=str))+"\n") #write standard deviations to log file
 
             ###CLIP CHUNK###
             chunk=CleanChunk(chunk,nchans,clipsig)
@@ -772,8 +774,8 @@ def ClipFil(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_samps=4
         #optional: rescaling and clipping
         if rficlip==True: #if rfi clipping mode is on:
             print '    Rescaling remainder...'
-            chunk,stdlist = RescaleChunk(chunk,nchans,clipsig)
-            stdlog.write(" ".join(np.array(stdlist,dtype=str))+"\n")
+            chunk,stdlist = RescaleChunk(chunk,nchans,clipsig) #rescale the chunk
+            stdlog.write(" ".join(np.array(stdlist,dtype=str))+"\n") #write standard deviations to log file
             print '    Cleaning remainder...'
             chunk = CleanChunk(chunk,nchans,clipsig)
     
