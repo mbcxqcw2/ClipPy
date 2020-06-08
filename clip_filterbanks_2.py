@@ -65,6 +65,10 @@ V6: 20200429  - Amended print statements to follow Python 3 conventions.
                 calculated for the channels in its input data prior to rescaling.
               - Amended instances calling RescaleChunk() to handle extra output.
               - Modified ClipFil() to write standard deviations to log file.
+    20200806  - Modified Median_clip() for Python 3 compatability using 
+                xrange->range conversion where required
+              - Amended ClipFilFast() n_complete_chunk_sets calculation to explicitly
+                declare integer division (//) to ensure Python 3 compatability
 
               
 """
@@ -398,6 +402,8 @@ def Median_clip(arr, sigma=3, max_iter=3, ftol=0.01, xtol=0.05, full_output=Fals
 
     #from /home/bretonr/lib/python/pyastro/misc.py
 
+    #modified by cwalker on 08/06/2020 to support Python 3 compatability
+
     Median_clip(arr, sigma, max_iter=3, ftol=0.01, xtol=0.05, full_output=False, axis=None)
     Return the median of an array after iteratively clipping the outliers.
     The median is calculated upon discarding elements that deviate more than
@@ -428,6 +434,16 @@ def Median_clip(arr, sigma=3, max_iter=3, ftol=0.01, xtol=0.05, full_output=Fals
     med = np.ma.median(arr, axis=axis)
     std = np.ma.std(arr, axis=axis)
     ncount = arr.count(axis=axis)
+
+    #perform a check to see if python 2.7 or free is running, and use the appropriate (x)range function
+    try:
+        #Python 2
+        xrange
+    except NameError:
+        #Python 3, xrange is now named range
+        xrange=range
+
+
     for niter in xrange(max_iter):
         ncount_old = arr.count(axis=axis)
         if axis is not None:
@@ -1020,7 +1036,7 @@ def ClipFilFast(in_fil,outname,outloc,bitswap,rficlip=True,clipsig=3.,toload_sam
     print('The total number of subchunks to process is: {0}'.format(nchunks))
     print('The number of subchunks to be processed in one chunk set is: {0}'.format(ncpus))
 
-    n_complete_chunk_sets = nchunks/ncpus #calculate the number of sets of chunks where all cpus will be used to be processed
+    n_complete_chunk_sets = nchunks//ncpus #calculate the number of sets of chunks where all cpus will be used to be processed
     print('The number of complete chunk sets to be processed is: {0}'.format(n_complete_chunk_sets))
 
     n_partial_chunk_set = nchunks%ncpus #calculate the number of cpus which must be used to process any remaining chunks
