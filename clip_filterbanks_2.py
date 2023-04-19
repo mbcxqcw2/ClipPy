@@ -591,10 +591,10 @@ def CleanChunk(data,nchans,sig=3.):
             # saturated for this timeseries and should be replaced with randoms
             # drawn from gaussian with mean: median/nchans and std: 1 (I think) so insert below line:
             chan_std = 1.
-            channel=np.random.normal(loc=med/np.float(nchans),scale=1,size=channel.shape)
+            channel=np.random.normal(loc=med/float(nchans),scale=1,size=channel.shape)
 
         #replace bad data with median of timeseries/nchans and std of channel std
-        channel = (toclip*np.random.normal(loc=med/np.float(nchans),scale=chan_std,size=channel.shape))+(~toclip*channel)
+        channel = (toclip*np.random.normal(loc=med/float(nchans),scale=chan_std,size=channel.shape))+(~toclip*channel)
         #overwrite
         data[i,:]=channel
 
